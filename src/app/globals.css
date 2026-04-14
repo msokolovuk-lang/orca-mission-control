@@ -11,19 +11,20 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: 186 89% 43%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 186 89% 43%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --ring: 186 89% 43%;
+    --brand: 186 89% 43%;
     --radius: 0.375rem;
 
     /* Semantic status colors */
@@ -56,22 +57,23 @@
     --card-foreground: 210 20% 92%;
     --popover: 220 30% 8%;
     --popover-foreground: 210 20% 92%;
-    --primary: 187 82% 53%;
+    --primary: 186 89% 43%;
     --primary-foreground: 220 30% 6%;
     --secondary: 220 25% 11%;
     --secondary-foreground: 210 20% 92%;
     --muted: 220 20% 14%;
     --muted-foreground: 220 15% 50%;
-    --accent: 220 20% 14%;
-    --accent-foreground: 210 20% 92%;
+    --accent: 186 89% 43%;
+    --accent-foreground: 220 30% 6%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 20% 14%;
     --input: 220 20% 14%;
-    --ring: 187 82% 53%;
+    --ring: 186 89% 43%;
+    --brand: 186 89% 43%;
 
     /* Void accent colors */
-    --void-cyan: 187 82% 53%;
+    --void-cyan: 186 89% 43%;
     --void-mint: 160 60% 52%;
     --void-amber: 38 92% 50%;
     --void-violet: 263 90% 66%;

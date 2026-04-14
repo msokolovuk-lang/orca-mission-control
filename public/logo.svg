@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">-B5;L5</title>
+  <desc id="logoDesc">-", by Sokolov</desc>
+  <style>
+    .title {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      font-size: 34px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      fill: #0CBCCE;
+    }
+    .tagline {
+      font-family: "DM Sans", sans-serif;
+      font-style: italic;
+      font-weight: 400;
+      font-size: 16px;
+      fill: #9CA3AF;
+    }
+  </style>
+  <text class="title" x="8" y="38">-",</text>
+  <text class="tagline" x="10" y="62">by Sokolov</text>
+</svg>

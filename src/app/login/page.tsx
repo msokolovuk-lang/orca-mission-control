@@ -1,9 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, FormEvent } from 'react'
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/brand/Logo'
 import { LanguageSwitcherSelect } from '@/components/ui/language-switcher'
 import { STORAGE_GATEWAY_URL } from '@/lib/device-identity'
 
@@ -289,17 +289,7 @@ export default function LoginPage() {
       </div>
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-background border border-border/50 flex items-center justify-center mb-3">
-            <Image
-              src="/brand/mc-logo-128.png"
-              alt="Mission Control logo"
-              width={48}
-              height={48}
-              className="h-full w-full object-cover"
-              priority
-            />
-          </div>
-          <h1 className="text-xl font-semibold text-foreground">{t('missionControl')}</h1>
+          <Logo className="items-center text-center mb-2" />
           <p className="text-sm text-muted-foreground mt-1">{t('signInToContinue')}</p>
         </div>
 
@@ -532,7 +522,6 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">{t('orchestrationTagline')}</p>
       </div>
     </div>
   )
