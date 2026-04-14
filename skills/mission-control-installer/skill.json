@@ -10,7 +10,7 @@
       "type": "string",
       "enum": ["docker", "local"],
       "default": "docker",
-      "description": "How to deploy Mission Control"
+      "description": "Как развернуть ИИ-Ателье «Центр управления»"
     },
     "port": {
       "type": "number",

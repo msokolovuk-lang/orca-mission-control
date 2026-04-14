@@ -103,7 +103,7 @@ function PageLoader({ steps }: { steps?: InitStep[] }) {
       className="flex items-center justify-center min-h-screen bg-background void-bg"
     >
       <div className="flex flex-col items-center gap-8 w-64">
-        {/* Animated logo sequence: OpenClaw + Claude converge → morph into MC mark */}
+        {/* Animated logo sequence: gateway + Claude converge → morph into product mark */}
         <div className="relative flex items-center justify-center h-28 w-full">
           {/* Ambient glow */}
           <div
@@ -139,7 +139,7 @@ function PageLoader({ steps }: { steps?: InitStep[] }) {
             <div className="animate-float" style={{ animationDelay: '2.7s' }}>
               <Image
                 src="/brand/mc-logo-128.png"
-                alt="Mission Control"
+                alt="ИИ-Ателье"
                 width={56}
                 height={56}
                 priority
