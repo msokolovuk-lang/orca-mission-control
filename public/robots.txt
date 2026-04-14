@@ -1,4 +1,4 @@
-# Mission Control — AI Agent Orchestration Dashboard
+# ИИ-Ателье «Центр управления» — панель оркестрации AI-агентов
 # https://github.com/builderz-labs/mission-control
 
 User-agent: *

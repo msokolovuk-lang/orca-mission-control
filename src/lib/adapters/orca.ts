@@ -1,7 +1,7 @@
 import { listTasks } from '@/lib/orca/client'
 import type { FrameworkAdapter, AgentRegistration, HeartbeatPayload, TaskReport, Assignment } from './adapter'
 
-export class OrcaAdapter implements FrameworkAdapter {
+export class CorporateVaultAdapter implements FrameworkAdapter {
   readonly framework = 'orca'
 
   async register(_agent: AgentRegistration): Promise<void> {
@@ -20,7 +20,7 @@ export class OrcaAdapter implements FrameworkAdapter {
     try {
       const tasks = await listTasks({ agentId, status: 'pending' })
       return tasks.map((task) => {
-        const title = typeof task.title === 'string' ? task.title : `Orca task ${task.id}`
+        const title = typeof task.title === 'string' ? task.title : `Корпоративная задача ${task.id}`
         const descriptionPart = typeof task.description === 'string' ? task.description : ''
         return {
           taskId: task.id,

@@ -12,7 +12,7 @@ import { MODEL_CATALOG } from '@/lib/models'
 import { logger } from '@/lib/logger'
 import { detectProviderSubscriptions, getPrimarySubscription } from '@/lib/provider-subscriptions'
 import { APP_VERSION } from '@/lib/version'
-import { isHermesInstalled, scanHermesSessions } from '@/lib/hermes-sessions'
+import { isExternalAgentInstalled, scanExternalAgentSessions } from '@/lib/agent-sessions'
 import { registerMcAsDashboard } from '@/lib/gateway-runtime'
 
 export async function GET(request: NextRequest) {
@@ -682,11 +682,12 @@ async function getCapabilities(request?: NextRequest) {
     // settings table may not exist yet
   }
 
-  const hermesInstalled = isHermesInstalled()
+  const hermesInstalled = isExternalAgentInstalled()
   let hermesSessions = 0
   if (hermesInstalled) {
     try {
-      hermesSessions = scanHermesSessions(50).filter(s => s.isActive).length
+      const rows = await scanExternalAgentSessions(50)
+      hermesSessions = rows.filter(s => s.isActive).length
     } catch { /* ignore */ }
   }
 

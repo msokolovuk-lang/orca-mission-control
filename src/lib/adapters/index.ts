@@ -4,7 +4,7 @@ import { CrewAIAdapter } from './crewai'
 import { LangGraphAdapter } from './langgraph'
 import { AutoGenAdapter } from './autogen'
 import { ClaudeSdkAdapter } from './claude-sdk'
-import { OrcaAdapter } from './orca'
+import { CorporateVaultAdapter } from './orca'
 import type { FrameworkAdapter } from './adapter'
 
 const adapters: Record<string, () => FrameworkAdapter> = {
@@ -14,7 +14,7 @@ const adapters: Record<string, () => FrameworkAdapter> = {
   langgraph: () => new LangGraphAdapter(),
   autogen: () => new AutoGenAdapter(),
   'claude-sdk': () => new ClaudeSdkAdapter(),
-  orca: () => new OrcaAdapter(),
+  orca: () => new CorporateVaultAdapter(),
 }
 
 export function getAdapter(framework: string): FrameworkAdapter {

@@ -1,7 +1,7 @@
 {
   "name": "mission-control-installer",
   "version": "1.0.0",
-  "description": "Install and configure Mission Control — the OpenClaw agent orchestration dashboard",
+  "description": "Install and configure ИИ-Ателье «Центр управления» — панель оркестрации AI-агентов",
   "author": "Builderz Labs",
   "license": "MIT",
   "tools": ["exec", "fs"],
@@ -15,7 +15,7 @@
     "port": {
       "type": "number",
       "default": 3000,
-      "description": "Port for the Mission Control dashboard"
+      "description": "Port for the ИИ-Ателье dashboard"
     },
     "install_dir": {
       "type": "string",

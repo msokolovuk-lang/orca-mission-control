@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
             );
 
             if (stderr && stderr.includes('error')) {
-              throw new Error(`OpenClaw error: ${stderr}`);
+              throw new Error(`Ошибка шлюза: ${stderr}`);
             }
             
             // Mark as delivered

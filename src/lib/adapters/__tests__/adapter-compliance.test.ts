@@ -57,7 +57,9 @@ const testReport: TaskReport = {
 
 // ─── Shared Compliance Tests ─────────────────────────────────────────────────
 
-const ALL_FRAMEWORKS = ['openclaw', 'generic', 'crewai', 'langgraph', 'autogen', 'claude-sdk']
+const ALL_FRAMEWORKS = ['openclaw', 'generic', 'crewai', 'langgraph', 'autogen', 'claude-sdk', 'orca']
+/** Adapters that fully implement the event + assignment contract (orca is a read-only stub until B.2.1). */
+const COMPLIANCE_FRAMEWORKS = ALL_FRAMEWORKS.filter((f) => f !== 'orca')
 
 describe('Adapter Registry', () => {
   it('lists all registered adapters', () => {
@@ -79,8 +81,8 @@ describe('Adapter Registry', () => {
   })
 })
 
-// Run the full compliance suite for EVERY adapter
-describe.each(ALL_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framework) => {
+// Run the full compliance suite for adapters that broadcast + delegate assignments
+describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framework) => {
   let adapter: FrameworkAdapter
 
   beforeEach(() => {
@@ -340,7 +342,7 @@ describe('Cross-adapter consistency', () => {
   it('all adapters emit the same event types for the same actions', async () => {
     const eventsByFramework: Record<string, string[]> = {}
 
-    for (const fw of ALL_FRAMEWORKS) {
+    for (const fw of COMPLIANCE_FRAMEWORKS) {
       mockBroadcast.mockClear()
       mockQuery.mockResolvedValue([])
 
@@ -355,7 +357,7 @@ describe('Cross-adapter consistency', () => {
 
     const expected = ['agent.created', 'agent.status_changed', 'task.updated', 'agent.status_changed']
 
-    for (const fw of ALL_FRAMEWORKS) {
+    for (const fw of COMPLIANCE_FRAMEWORKS) {
       expect(eventsByFramework[fw]).toEqual(expected)
     }
   })
@@ -364,7 +366,7 @@ describe('Cross-adapter consistency', () => {
     const mockAssignments = [{ taskId: '99', description: 'Shared task', priority: 0 }]
     mockQuery.mockResolvedValue(mockAssignments)
 
-    for (const fw of ALL_FRAMEWORKS) {
+    for (const fw of COMPLIANCE_FRAMEWORKS) {
       const adapter = getAdapter(fw)
       const result = await adapter.getAssignments('shared-agent')
       expect(result).toEqual(mockAssignments)

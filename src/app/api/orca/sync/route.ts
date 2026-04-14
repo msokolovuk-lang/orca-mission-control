@@ -12,6 +12,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(report)
   } catch (error: any) {
     logger.error({ err: error }, 'POST /api/orca/sync error')
-    return NextResponse.json({ error: error?.message || 'Orca sync failed' }, { status: 500 })
+    return NextResponse.json({ error: error?.message || 'Корпоративная синхронизация не удалась' }, { status: 500 })
   }
 }

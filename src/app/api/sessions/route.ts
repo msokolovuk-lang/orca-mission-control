@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAllGatewaySessions } from '@/lib/sessions'
 import { syncClaudeSessions } from '@/lib/claude-sessions'
 import { scanCodexSessions } from '@/lib/codex-sessions'
-import { scanHermesSessions } from '@/lib/hermes-sessions'
+import { scanExternalAgentSessions } from '@/lib/agent-sessions'
 import { getDatabase, db_helpers } from '@/lib/db'
 import { requireRole } from '@/lib/auth'
 import { callOpenClawGateway } from '@/lib/openclaw-gateway'
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     await syncClaudeSessions()
     const claudeSessions = getLocalClaudeSessions()
     const codexSessions = getLocalCodexSessions()
-    const hermesSessions = getLocalHermesSessions()
+    const hermesSessions = await getLocalHermesSessions()
     const localMerged = mergeLocalSessions(claudeSessions, codexSessions, hermesSessions)
 
     if (mappedGatewaySessions.length === 0 && localMerged.length === 0) {
@@ -161,7 +161,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 function mapGatewaySessions(gatewaySessions: ReturnType<typeof getAllGatewaySessions>) {
-  // Deduplicate by sessionId — OpenClaw tracks cron runs under the same
+  // Deduplicate by sessionId — gateway tracks cron runs under the same
   // session ID as the parent session, causing duplicate React keys (#80).
   // Keep the most recently updated entry when duplicates exist.
   const sessionMap = new Map<string, (typeof gatewaySessions)[0]>()
@@ -277,9 +277,9 @@ function getLocalCodexSessions() {
   }
 }
 
-function getLocalHermesSessions() {
+async function getLocalHermesSessions() {
   try {
-    const rows = scanHermesSessions(100)
+    const rows = await scanExternalAgentSessions(100)
 
     return rows.map((s) => {
       const total = s.inputTokens + s.outputTokens

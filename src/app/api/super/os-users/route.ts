@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
             logger.error({ err: sudoErr }, 'Failed to create macOS user')
             return NextResponse.json({
               error: `Failed to create OS user. This requires admin privileges. ${msg}`,
-              hint: 'Run Mission Control with sudo or grant the current user admin rights.',
+              hint: 'Запустите ИИ-Ателье «Центр управления» с sudo или выдайте текущему пользователю права администратора.',
             }, { status: 500 })
           }
         }

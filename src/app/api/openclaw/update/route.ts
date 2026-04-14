@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (match) installedBefore = match[1]
   } catch {
     return NextResponse.json(
-      { error: 'OpenClaw is not installed or not reachable' },
+      { error: 'Среда шлюза недоступна или не установлена' },
       { status: 400 }
     )
   }
@@ -59,12 +59,12 @@ export async function POST(request: Request) {
       err?.stderr?.toString?.()?.trim() ||
       err?.stdout?.toString?.()?.trim() ||
       err?.message ||
-      'Unknown error during OpenClaw update'
+      'Неизвестная ошибка при обновлении шлюза'
 
-    logger.error({ err }, 'OpenClaw update failed')
+    logger.error({ err }, 'Gateway runtime update failed')
 
     return NextResponse.json(
-      { error: 'OpenClaw update failed', detail },
+      { error: 'Не удалось обновить шлюз', detail },
       { status: 500 }
     )
   }

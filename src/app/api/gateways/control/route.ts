@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { config } from '@/lib/config'
-import { isHermesGatewayRunning } from '@/lib/hermes-sessions'
+import { isExternalGatewayRunning } from '@/lib/agent-sessions'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, openSync } from 'node:fs'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
@@ -105,7 +105,7 @@ interface GatewayStatus {
 function getHermesGatewayStatus(): GatewayStatus {
   const homeDir = config.homeDir
   const installed = existsSync(join(homeDir, '.hermes'))
-  const running = installed && isHermesGatewayRunning()
+  const running = installed && isExternalGatewayRunning()
 
   let pid: number | null = null
   if (running) {
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
       if (inDocker) {
         if (action === 'start') {
           // If already running, short-circuit
-          if (isHermesGatewayRunning()) {
+          if (isExternalGatewayRunning()) {
             return NextResponse.json({
               success: true,
               output: 'Hermes gateway already running',

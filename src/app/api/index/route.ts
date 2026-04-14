@@ -138,10 +138,10 @@ const endpoints: Endpoint[] = [
   { path: '/api/export', methods: ['GET'], description: 'Data export', tag: 'System', auth: 'viewer' },
   { path: '/api/workload', methods: ['GET'], description: 'Agent workload stats', tag: 'System', auth: 'viewer' },
   { path: '/api/releases/check', methods: ['GET'], description: 'Check for updates', tag: 'System', auth: 'public' },
-  { path: '/api/releases/update', methods: ['POST'], description: 'Update Mission Control to a specific release tag', tag: 'System', auth: 'admin' },
-  { path: '/api/openclaw/version', methods: ['GET'], description: 'Installed OpenClaw version and latest release metadata', tag: 'System', auth: 'public' },
-  { path: '/api/openclaw/update', methods: ['POST'], description: 'Update OpenClaw to the latest stable release', tag: 'System', auth: 'admin' },
-  { path: '/api/openclaw/doctor', methods: ['GET', 'POST'], description: 'Inspect and fix OpenClaw configuration drift', tag: 'System', auth: 'admin' },
+  { path: '/api/releases/update', methods: ['POST'], description: 'Обновить ИИ-Ателье «Центр управления» до указанного релиза', tag: 'System', auth: 'admin' },
+  { path: '/api/openclaw/version', methods: ['GET'], description: 'Версия установленного шлюза агентов и метаданные релиза', tag: 'System', auth: 'public' },
+  { path: '/api/openclaw/update', methods: ['POST'], description: 'Обновить шлюз агентов до последнего стабильного выпуска', tag: 'System', auth: 'admin' },
+  { path: '/api/openclaw/doctor', methods: ['GET', 'POST'], description: 'Проверка и исправление расхождений конфигурации шлюза', tag: 'System', auth: 'admin' },
 
   // ── Local ─────────────────────────────────────────
   { path: '/api/local/flight-deck', methods: ['GET'], description: 'Local flight deck status', tag: 'Local', auth: 'viewer' },

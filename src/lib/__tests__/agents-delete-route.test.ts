@@ -55,7 +55,7 @@ describe('DELETE /api/agents/[id]', () => {
     vi.clearAllMocks()
   })
 
-  it('removes the agent from OpenClaw config even when workspace deletion is disabled', async () => {
+  it('removes the agent from gateway config even when workspace deletion is disabled', async () => {
     const agent = { id: 7, name: 'neo', role: 'tester', config: JSON.stringify({ openclawId: 'neo' }) }
     const selectStmt = { get: vi.fn(() => agent) }
     const deleteStmt = { run: vi.fn() }
@@ -107,7 +107,7 @@ describe('DELETE /api/agents/[id]', () => {
     expect(deleteStmt.run).toHaveBeenCalledWith(8, 1)
   })
 
-  it('still deletes the Mission Control agent when config cleanup fails', async () => {
+  it('still deletes the dashboard agent when config cleanup fails', async () => {
     const agent = { id: 9, name: 'trinity', role: 'tester', config: JSON.stringify({ openclawId: 'trinity' }) }
     const selectStmt = { get: vi.fn(() => agent) }
     const deleteStmt = { run: vi.fn() }
@@ -130,6 +130,6 @@ describe('DELETE /api/agents/[id]', () => {
     expect(response.status).toBe(200)
     expect(deleteStmt.run).toHaveBeenCalledWith(9, 1)
     expect(body.success).toBe(true)
-    expect(body.warning).toContain('OpenClaw config cleanup skipped')
+    expect(body.warning).toContain('Gateway config cleanup skipped')
   })
 })

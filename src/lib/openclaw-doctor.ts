@@ -157,7 +157,7 @@ export function parseOpenClawDoctorOutput(
 
   const summary =
     level === 'healthy'
-      ? 'OpenClaw doctor reports a healthy configuration.'
+      ? 'Диагностика шлюза: конфигурация в порядке.'
       : issues[0] ||
         lines.find(line =>
           !/^run:/i.test(line) &&
@@ -165,7 +165,7 @@ export function parseOpenClawDoctorOutput(
           !isSessionAgingLine(line) &&
           !isDecorativeLine(line)
         ) ||
-        'OpenClaw doctor reported configuration issues.'
+        'Диагностика шлюза сообщает о проблемах конфигурации.'
 
   const canFix = level !== 'healthy' || /openclaw doctor --fix/i.test(raw)
 

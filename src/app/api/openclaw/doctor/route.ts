@@ -21,7 +21,7 @@ function getCommandDetail(error: unknown): { detail: string; code: number | null
   }
 }
 
-function isMissingOpenClaw(detail: string): boolean {
+function isMissingGatewayCli(detail: string): boolean {
   return /enoent|not installed|not reachable|command not found/i.test(detail)
 }
 
@@ -40,8 +40,8 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     const { detail, code } = getCommandDetail(error)
-    if (isMissingOpenClaw(detail)) {
-      return NextResponse.json({ error: 'OpenClaw is not installed or not reachable' }, { status: 400 })
+    if (isMissingGatewayCli(detail)) {
+      return NextResponse.json({ error: 'Среда шлюза недоступна или не установлена' }, { status: 400 })
     }
 
     return NextResponse.json(parseOpenClawDoctorOutput(detail, code ?? 1, {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const progress: Array<{ step: string; detail: string }> = []
 
     const fixResult = await runOpenClaw(['doctor', '--fix'], { timeoutMs: 120000 })
-    progress.push({ step: 'doctor', detail: 'Applied OpenClaw doctor config fixes.' })
+    progress.push({ step: 'doctor', detail: 'Исправления конфигурации шлюза применены.' })
 
     try {
       await runOpenClaw(['sessions', 'cleanup', '--all-agents', '--enforce', '--fix-missing'], { timeoutMs: 120000 })
@@ -107,15 +107,15 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     const { detail, code } = getCommandDetail(error)
-    if (isMissingOpenClaw(detail)) {
-      return NextResponse.json({ error: 'OpenClaw is not installed or not reachable' }, { status: 400 })
+    if (isMissingGatewayCli(detail)) {
+      return NextResponse.json({ error: 'Среда шлюза недоступна или не установлена' }, { status: 400 })
     }
 
-    logger.error({ err: error }, 'OpenClaw doctor fix failed')
+    logger.error({ err: error }, 'Gateway doctor fix failed')
 
     return NextResponse.json(
       {
-        error: 'OpenClaw doctor fix failed',
+        error: 'Не удалось выполнить исправление диагностики шлюза',
         detail,
         status: parseOpenClawDoctorOutput(detail, code ?? 1, {
           stateDir: config.openclawStateDir,

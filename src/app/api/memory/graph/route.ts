@@ -34,7 +34,7 @@ function isOrcaBrainConfigured(): boolean {
 function getErrorDetail(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
-  return 'Unknown Orca Brain error'
+  return 'Неизвестная ошибка корпоративного хранилища'
 }
 
 function getAgentData(dbPath: string, agentName: string): AgentGraphData | null {
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ agents })
     } catch (error) {
-      logger.warn({ err: error }, 'Orca Brain graph request failed')
+      logger.warn({ err: error }, 'Corporate vault graph request failed')
       return NextResponse.json(
         { error: 'orca-brain-unavailable', detail: getErrorDetail(error) },
         { status: 502 },

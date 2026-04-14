@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { config } from './config'
 import { runCommand, runOpenClaw } from './command'
 import { scanForInjection } from './injection-guard'
-import { isHermesInstalled, isHermesGatewayRunning, clearHermesDetectionCache } from './hermes-sessions'
+import { isExternalAgentInstalled, isExternalGatewayRunning, clearAgentDetectionCache } from './agent-sessions'
 import { logger } from './logger'
 
 // ---------------------------------------------------------------------------
@@ -193,7 +193,7 @@ export interface RuntimeMeta {
 
 const RUNTIME_META: Record<RuntimeId, RuntimeMeta> = {
   openclaw: {
-    name: 'OpenClaw',
+    name: 'Агентский шлюз',
     description: 'Multi-agent orchestration with gateway, sessions, and memory.',
     authRequired: false,
     authHint: '',
@@ -202,7 +202,7 @@ const RUNTIME_META: Record<RuntimeId, RuntimeMeta> = {
     name: 'Hermes Agent',
     description: 'Self-improving AI agent with learning loop, skills, and multi-platform messaging.',
     authRequired: true,
-    authHint: 'Run "hermes setup" or configure via Mission Control.',
+    authHint: 'Выполните hermes setup или настройте среду в разделе «Настройки» ИИ-Ателье.',
   },
   claude: {
     name: 'Claude Code',
@@ -288,7 +288,7 @@ function detectOpenClaw(): RuntimeStatus {
 
 function detectHermes(): RuntimeStatus {
   const meta = RUNTIME_META.hermes
-  const installed = isHermesInstalled()
+  const installed = isExternalAgentInstalled()
   let version: string | null = null
 
   if (installed) {
@@ -322,7 +322,7 @@ function detectHermes(): RuntimeStatus {
     }
   }
 
-  const running = installed && isHermesGatewayRunning()
+  const running = installed && isExternalGatewayRunning()
 
   // Check if hermes has a provider/model configured
   let authenticated = false
@@ -571,7 +571,7 @@ async function runInstallCmd(cmd: string, args: string[], job: InstallJob): Prom
 }
 
 async function installOpenClawLocal(job: InstallJob): Promise<void> {
-  job.output += '> Installing OpenClaw...\n'
+  job.output += '> Установка агентского шлюза...\n'
   const env = {
     ...getInstallEnv(),
     NONINTERACTIVE: '1',
@@ -598,7 +598,7 @@ async function installOpenClawLocal(job: InstallJob): Promise<void> {
     const { installed: verified } = detectBinary([config.openclawBin || 'openclaw'])
 
     if (result.code === 0 && verified) {
-      job.output += '\n> OpenClaw installed. Running initial setup...\n'
+      job.output += '\n> Шлюз установлен. Запуск первичной настройки...\n'
       try {
         const onboard = await runCommand('openclaw', ['onboard', '--non-interactive'], { timeoutMs: 60_000, env })
         if (onboard.stdout) job.output += onboard.stdout + '\n'
@@ -607,7 +607,7 @@ async function installOpenClawLocal(job: InstallJob): Promise<void> {
         job.output += '> Note: "openclaw onboard" skipped (run manually if needed).\n'
       }
       job.status = 'success'
-      job.output += '\n> OpenClaw installed successfully.\n'
+      job.output += '\n> Установка шлюза завершена успешно.\n'
     } else if (result.code === 0 && !verified) {
       job.status = 'failed'
       job.error = 'Install command succeeded but openclaw binary was not found. curl may not be installed.'
@@ -658,9 +658,9 @@ async function installHermesLocal(job: InstallJob): Promise<void> {
     rmSync(reviewed.tempDir, { recursive: true, force: true })
 
     // Verify install actually worked — check for the binary
-    clearHermesDetectionCache()
+    clearAgentDetectionCache()
     logger.info({ dataDir: config.dataDir, homeDir: require('node:os').homedir() }, 'Verifying hermes install...')
-    const verified = isHermesInstalled()
+    const verified = isExternalAgentInstalled()
     logger.info({ verified }, 'Hermes install verification result')
 
     if (result.code === 0 && verified) {
@@ -725,7 +725,7 @@ export function getActiveJobs(): InstallJob[] {
 
 export function generateDockerSidecar(runtime: RuntimeId): string {
   if (runtime === 'openclaw') {
-    return `  # OpenClaw Gateway sidecar
+    return `  # Агентский шлюз (sidecar)
   openclaw-gateway:
     image: ghcr.io/openclaw/openclaw:latest
     container_name: openclaw-gateway

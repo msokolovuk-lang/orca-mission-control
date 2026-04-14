@@ -44,7 +44,7 @@ interface DispatchableTask {
 
 /**
  * Classify a task's complexity and return the appropriate model ID to pass
- * to the OpenClaw gateway. Uses keyword signals on title + description.
+ * to the agent gateway. Uses keyword signals on title + description.
  *
  * Tiers:
  *   ROUTINE  → cheap model (Haiku)   — file ops, status checks, formatting
@@ -120,7 +120,7 @@ function buildTaskPrompt(task: DispatchableTask, rejectionFeedback?: string | nu
     : `TASK-${task.id}`
 
   const lines = [
-    'You have been assigned a task in Mission Control.',
+    'You have been assigned a task in ИИ-Ателье «Центр управления».',
     '',
     `**[${ticket}] ${task.title}**`,
     `Priority: ${task.priority}`,
@@ -168,7 +168,7 @@ function parseAgentResponse(stdout: string): AgentResponseParsed {
       : typeof parsed?.session_id === 'string' ? parsed.session_id
       : null
 
-    // OpenClaw agent --json returns { payloads: [{ text: "..." }] }
+    // Gateway agent --json returns { payloads: [{ text: "..." }] }
     if (parsed?.payloads?.[0]?.text) {
       return { text: parsed.payloads[0].text, sessionId }
     }
@@ -192,7 +192,7 @@ function getAnthropicApiKey(): string | null {
 }
 
 function isGatewayAvailable(): boolean {
-  // Gateway is available if OpenClaw is installed OR a gateway is registered in the DB
+  // Gateway is available if the gateway CLI is installed OR a gateway is registered in the DB
   if (config.openclawHome) return true
   try {
     const db = getDatabase()
@@ -367,7 +367,7 @@ function buildReviewPrompt(task: ReviewableTask): string {
     : `TASK-${task.id}`
 
   const lines = [
-    'You are Aegis, the quality reviewer for Mission Control.',
+    'You are Aegis, the quality reviewer for ИИ-Ателье «Центр управления».',
     'Review the following completed task and its resolution.',
     '',
     `**[${ticket}] ${task.title}**`,

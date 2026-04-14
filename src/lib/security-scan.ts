@@ -78,7 +78,7 @@ const INSECURE_PASSWORDS = new Set([
 export function runSecurityScan(): ScanResult {
   const credentials = scanCredentials()
   const network = scanNetwork()
-  const openclaw = scanOpenClaw()
+  const openclaw = scanGatewayConfig()
   const runtime = scanRuntime()
   const osLevel = scanOS()
 
@@ -257,10 +257,10 @@ function scanNetwork(): Category {
 }
 
 // ---------------------------------------------------------------------------
-// Category: OpenClaw
+// Category: agent gateway (openclaw.json)
 // ---------------------------------------------------------------------------
 
-function scanOpenClaw(): Category {
+function scanGatewayConfig(): Category {
   const checks: Check[] = []
   const configPath = config.openclawConfigPath
 
@@ -268,11 +268,11 @@ function scanOpenClaw(): Category {
     const gatewayOptional = process.env.NEXT_PUBLIC_GATEWAY_OPTIONAL === 'true'
     checks.push({
       id: 'config_found',
-      name: 'OpenClaw config found',
+      name: 'Конфигурация шлюза найдена',
       status: gatewayOptional ? 'pass' : 'warn',
       detail: gatewayOptional
-        ? 'OpenClaw not configured (standalone mode — gateway optional)'
-        : 'openclaw.json not found — OpenClaw checks skipped',
+        ? 'Шлюз не настроен (автономный режим — шлюз необязателен)'
+        : 'openclaw.json не найден — проверки шлюза пропущены',
       fix: gatewayOptional ? '' : 'Set OPENCLAW_HOME or OPENCLAW_CONFIG_PATH in .env',
       severity: 'low',
     })
@@ -285,9 +285,9 @@ function scanOpenClaw(): Category {
   } catch (err) {
     checks.push({
       id: 'config_valid',
-      name: 'OpenClaw config valid',
+      name: 'Конфигурация шлюза корректна',
       status: 'fail',
-      detail: 'openclaw.json could not be parsed',
+      detail: 'Не удалось разобрать openclaw.json',
       fix: 'Check openclaw.json for syntax errors',
       severity: 'high',
     })
@@ -630,7 +630,7 @@ function scanOS(): Category {
       name: 'Not running as root',
       status: uid === 0 ? 'fail' : 'pass',
       detail: uid === 0 ? 'Process is running as root (UID 0)' : `Running as UID ${uid}`,
-      fix: uid === 0 ? 'Run Mission Control as a non-root user' : '',
+      fix: uid === 0 ? 'Запускайте ИИ-Ателье «Центр управления» не от root' : '',
       severity: 'critical',
       platform: 'all',
     })

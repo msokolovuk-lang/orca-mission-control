@@ -33,7 +33,7 @@ function isOrcaBrainConfigured(): boolean {
 function getErrorDetail(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
-  return 'Unknown Orca Brain error'
+  return 'Неизвестная ошибка корпоративного хранилища'
 }
 
 function orcaBrainUnavailable(error: unknown): NextResponse {
@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
 
           return NextResponse.json({ tree: limitTreeDepth(tree, maxDepth) })
         } catch (error) {
-          logger.warn({ err: error }, 'Orca Brain tree request failed')
+          logger.warn({ err: error }, 'Corporate vault tree request failed')
           return orcaBrainUnavailable(error)
         }
       }
@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
       if (isOrcaBrainConfigured()) {
         const parsed = parseVaultAndNotePath(searchParams, path)
         if (!parsed) {
-          return NextResponse.json({ error: 'Invalid Orca Brain note path' }, { status: 400 })
+          return NextResponse.json({ error: 'Некорректный путь к заметке корпоративного хранилища' }, { status: 400 })
         }
         try {
           const note = await readNote(parsed.vault, parsed.notePath)
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
             schema,
           })
         } catch (error) {
-          logger.warn({ err: error, path }, 'Orca Brain content request failed')
+          logger.warn({ err: error, path }, 'Corporate vault content request failed')
           return orcaBrainUnavailable(error)
         }
       }

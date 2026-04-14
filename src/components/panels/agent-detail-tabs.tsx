@@ -1578,7 +1578,7 @@ export function ConfigTab({
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
-        <h4 className="text-lg font-medium text-foreground">{t('openclawConfig')}</h4>
+        <h4 className="text-lg font-medium text-foreground">{t('gatewayAgentConfig')}</h4>
         <div className="flex gap-2">
           <Button
             onClick={() => setShowJson(!showJson)}
@@ -1606,7 +1606,7 @@ export function ConfigTab({
 
       {config.openclawId && (
         <div className="text-xs text-muted-foreground">
-          OpenClaw ID: <span className="font-mono text-foreground">{config.openclawId}</span>
+          ID шлюза: <span className="font-mono text-foreground">{config.openclawId}</span>
           {config.isDefault && <span className="ml-2 px-1.5 py-0.5 bg-primary/20 text-primary rounded text-xs">{t('default')}</span>}
         </div>
       )}

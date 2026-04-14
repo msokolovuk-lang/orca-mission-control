@@ -309,7 +309,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
           onComplete={() => {
             setSetupRuntime(null)
             fetchRuntimes()
-            const names: Record<string, string> = { openclaw: 'OpenClaw', claude: 'Claude Code', codex: 'Codex CLI' }
+            const names: Record<string, string> = { openclaw: 'Агентский шлюз', claude: 'Claude Code', codex: 'Codex CLI' }
             showFeedback(true, t('setupComplete', { name: names[setupRuntime] || setupRuntime }))
           }}
         />

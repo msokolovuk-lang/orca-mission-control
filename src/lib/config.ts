@@ -51,7 +51,7 @@ const openclawWorkspaceDir =
   (openclawStateDir ? path.join(openclawStateDir, 'workspace') : '')
 const defaultMemoryDir = (() => {
   if (process.env.OPENCLAW_MEMORY_DIR) return process.env.OPENCLAW_MEMORY_DIR
-  // Prefer OpenClaw workspace memory context (daily notes + knowledge-base)
+  // Prefer gateway workspace memory context (daily notes + knowledge-base)
   // when available; fallback to legacy sqlite memory path.
   if (
     openclawWorkspaceDir &&

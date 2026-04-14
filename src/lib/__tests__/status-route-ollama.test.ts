@@ -30,7 +30,6 @@ vi.mock('@/lib/provider-subscriptions', () => ({
   getPrimarySubscription: vi.fn(() => null),
 }))
 vi.mock('@/lib/version', () => ({ APP_VERSION: 'test' }))
-vi.mock('@/lib/hermes-sessions', () => ({ isHermesInstalled: vi.fn(() => false), scanHermesSessions: vi.fn(() => []) }))
 vi.mock('@/lib/gateway-runtime', () => ({ registerMcAsDashboard: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ logger: { error: loggerErrorMock, info: vi.fn(), warn: vi.fn() } }))
 vi.mock('@/lib/models', () => ({

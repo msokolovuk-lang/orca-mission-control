@@ -101,7 +101,7 @@ export function buildBootstrapPlan(tenant: {
     },
     {
       key: 'create-openclaw-state',
-      title: `Create OpenClaw state directory ${tenant.openclaw_home}`,
+      title: `Create agent gateway state directory ${tenant.openclaw_home}`,
       command: ['/usr/bin/install', '-d', '-m', '0750', '-o', tenant.linux_user, '-g', tenant.linux_user, tenant.openclaw_home],
       requires_root: true,
       timeout_ms: 10000,
@@ -115,7 +115,7 @@ export function buildBootstrapPlan(tenant: {
     },
     {
       key: 'seed-openclaw-template',
-      title: 'Seed base OpenClaw config scaffold',
+      title: 'Seed base gateway config scaffold',
       command: ['/usr/bin/cp', '-n', opts.templateOpenclawJsonPath, `${tenant.openclaw_home}/openclaw.json`],
       requires_root: true,
       timeout_ms: 12000,
@@ -356,7 +356,7 @@ export function createTenantAndBootstrapJob(request: TenantBootstrapRequest, act
   const templateOpenclawJsonPath =
     String(process.env.MC_SUPER_TEMPLATE_OPENCLAW_JSON || (process.env.OPENCLAW_HOME ? path.join(process.env.OPENCLAW_HOME, 'openclaw.json') : '')).trim()
   if (!templateOpenclawJsonPath) {
-    throw new Error('Missing OpenClaw template config. Set MC_SUPER_TEMPLATE_OPENCLAW_JSON to an openclaw.json to seed new tenants.')
+    throw new Error('Missing gateway template config. Set MC_SUPER_TEMPLATE_OPENCLAW_JSON to an openclaw.json to seed new tenants.')
   }
 
   const repoRoot = String(process.env.MISSION_CONTROL_REPO_ROOT || process.cwd()).trim() || process.cwd()

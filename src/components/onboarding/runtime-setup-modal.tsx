@@ -25,7 +25,7 @@ export function RuntimeSetupModal({ runtime, onClose, onComplete }: RuntimeSetup
   )
 }
 
-// ─── OpenClaw Setup ──────────────────────────────────────────────────────
+// ─── Agent gateway setup ─────────────────────────────────────────────────
 
 function OpenClawSetup({ onClose, onComplete }: { onClose: () => void; onComplete: () => void }) {
   const [step, setStep] = useState<'onboard' | 'verify' | 'done'>('onboard')
@@ -106,8 +106,8 @@ function OpenClawSetup({ onClose, onComplete }: { onClose: () => void; onComplet
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold">Set Up OpenClaw</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Configure the gateway and verify connectivity</p>
+          <h3 className="text-lg font-semibold">Настройка агентского шлюза</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Настройте шлюз и проверьте подключение</p>
         </div>
         <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <svg className="w-5 h-5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8" /></svg>
@@ -139,7 +139,7 @@ function OpenClawSetup({ onClose, onComplete }: { onClose: () => void; onComplet
               <span className="text-lg">1</span>
               <div>
                 <p className="text-sm font-medium">Health Check</p>
-                <p className="text-xs text-muted-foreground">Run OpenClaw doctor to check gateway configuration and connectivity.</p>
+                <p className="text-xs text-muted-foreground">Запустите диагностику шлюза, чтобы проверить конфигурацию и связь.</p>
               </div>
             </div>
           </div>
@@ -148,7 +148,7 @@ function OpenClawSetup({ onClose, onComplete }: { onClose: () => void; onComplet
 
           {healthStatus?.healthy && (
             <div className="p-3 rounded-lg border border-green-500/30 bg-green-500/5 text-xs text-green-400">
-              OpenClaw is healthy and properly configured.
+              Шлюз в порядке и корректно настроен.
             </div>
           )}
 
@@ -186,7 +186,7 @@ function OpenClawSetup({ onClose, onComplete }: { onClose: () => void; onComplet
         <div className="space-y-4">
           <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/5 text-center space-y-2">
             <div className="text-2xl">+</div>
-            <p className="text-sm font-medium text-green-400">OpenClaw is ready</p>
+            <p className="text-sm font-medium text-green-400">Шлюз готов к работе</p>
             <p className="text-xs text-muted-foreground">Gateway is configured and healthy. Agents can now connect.</p>
           </div>
 

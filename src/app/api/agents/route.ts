@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
     if (provision_openclaw_workspace) {
       if (!appConfig.openclawStateDir) {
         return NextResponse.json(
-          { error: 'OPENCLAW_STATE_DIR is not configured; cannot provision OpenClaw workspace' },
+          { error: 'OPENCLAW_STATE_DIR is not configured; cannot provision agent gateway workspace' },
           { status: 500 }
         );
       }
@@ -228,9 +228,9 @@ export async function POST(request: NextRequest) {
           { timeoutMs: 20000 }
         );
       } catch (provisionError: any) {
-        logger.error({ err: provisionError, openclawId, workspacePath }, 'OpenClaw workspace provisioning failed');
+        logger.error({ err: provisionError, openclawId, workspacePath }, 'Agent gateway workspace provisioning failed');
         return NextResponse.json(
-          { error: provisionError?.message || 'Failed to provision OpenClaw agent workspace' },
+          { error: provisionError?.message || 'Failed to provision agent gateway workspace' },
           { status: 502 }
         );
       }

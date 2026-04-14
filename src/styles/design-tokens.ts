@@ -1,5 +1,5 @@
 /**
- * Design tokens for Mission Control "Void" aesthetic.
+ * Design tokens for ИИ-Ателье «Центр управления» (Void aesthetic).
  * Server-safe — no 'use client' directive needed.
  *
  * Use the `hsl()` helper when you need inline styles (ReactFlow nodes, recharts),

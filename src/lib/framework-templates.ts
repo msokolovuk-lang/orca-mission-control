@@ -1,13 +1,13 @@
 /**
  * Framework-Agnostic Template System
  *
- * Extends the existing OpenClaw templates with framework-neutral archetypes
+ * Extends the existing gateway templates with framework-neutral archetypes
  * that any adapter can use. Each framework template defines:
  *   - What the agent does (role, capabilities)
  *   - How it connects (framework-specific connection config)
  *   - What permissions it needs (tool scopes)
  *
- * The existing AGENT_TEMPLATES in agent-templates.ts remain for OpenClaw-native
+ * The existing AGENT_TEMPLATES in agent-templates.ts remain for gateway-native
  * use. This module wraps them with a framework-aware registry.
  */
 
@@ -40,20 +40,39 @@ export interface FrameworkInfo {
 export const FRAMEWORK_REGISTRY: Record<string, FrameworkInfo> = {
   openclaw: {
     id: 'openclaw',
-    label: 'OpenClaw',
+    label: 'Агентский шлюз',
     description: 'Native gateway-managed agents with full lifecycle control',
     docsUrl: 'https://github.com/openclaw/openclaw',
     connection: {
       connectionMode: 'websocket',
       heartbeatInterval: 30,
       setupHints: [
-        'Agents are managed via the OpenClaw gateway',
-        'Config syncs bidirectionally via openclaw.json',
-        'Use "pnpm openclaw agents add" to provision',
+        'Агенты управляются через шлюз',
+        'Конфигурация синхронизируется через openclaw.json',
+        'Используйте «pnpm openclaw agents add» для выдачи агентов',
       ],
-      exampleSnippet: `# OpenClaw agents are auto-managed by the gateway.
-# No manual registration needed — sync happens automatically.
-# See: openclaw.json in your state directory.`,
+      exampleSnippet: `# Агенты шлюза управляются автоматически.
+# Ручная регистрация не нужна — синхронизация выполняется сама.
+# См. openclaw.json в каталоге состояния.`,
+    },
+  },
+  orca: {
+    id: 'orca',
+    label: 'Корпоративное хранилище',
+    description: 'Синхронизация агентов и задач с корпоративным контуром (read-only)',
+    docsUrl: '',
+    connection: {
+      connectionMode: 'polling',
+      heartbeatInterval: 60,
+      setupHints: [
+        'Настройте ORCA_GATEWAY_URL и ORCA_GATEWAY_TOKEN',
+        'Используйте адаптер orca в /api/adapters для назначений',
+      ],
+      exampleSnippet: `# Корпоративный контур — назначения через API адаптера
+curl -X POST http://localhost:3000/api/adapters \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -d '{"framework":"orca","action":"assignments","payload":{"agentId":"my-agent"}}'`,
     },
   },
   generic: {
@@ -172,7 +191,7 @@ MC_URL = "http://localhost:3000"
 HEADERS = {"Content-Type": "application/json", "x-api-key": "YOUR_API_KEY"}
 
 def register_crew_agent(agent: Agent):
-    """Register a CrewAI agent with Mission Control."""
+    """Register a CrewAI agent with ИИ-Ателье «Центр управления»."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "crewai",
         "action": "register",
@@ -188,7 +207,7 @@ def register_crew_agent(agent: Agent):
     })
 
 def report_task_complete(agent_id: str, task_id: str, output: str):
-    """Report task completion to Mission Control."""
+    """Report task completion to ИИ-Ателье «Центр управления»."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "crewai",
         "action": "report",
@@ -223,7 +242,7 @@ MC_URL = "http://localhost:3000"
 HEADERS = {"Content-Type": "application/json", "x-api-key": "YOUR_API_KEY"}
 
 def register_autogen_agent(agent_name: str, system_message: str):
-    """Register an AutoGen agent with Mission Control."""
+    """Register an AutoGen agent with ИИ-Ателье «Центр управления»."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "autogen",
         "action": "register",
@@ -309,7 +328,7 @@ export interface UniversalTemplate {
   frameworks: string[]
   /** Role-based capabilities (framework-agnostic) */
   capabilities: string[]
-  /** The OpenClaw template to use when framework is openclaw */
+  /** Gateway template id when framework is openclaw */
   openclawTemplateType?: string
 }
 
@@ -324,7 +343,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Orchestrator',
     description: 'Coordinates other agents, routes tasks, and manages workflows. Full access.',
     emoji: '\ud83e\udded',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['task_routing', 'agent_management', 'workflow_control', 'full_access'],
     openclawTemplateType: 'orchestrator',
   },
@@ -333,7 +352,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Developer',
     description: 'Writes and edits code, runs builds and tests. Read-write workspace access.',
     emoji: '\ud83d\udee0\ufe0f',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['code_write', 'code_execute', 'testing', 'debugging'],
     openclawTemplateType: 'developer',
   },
@@ -342,7 +361,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Reviewer / QA',
     description: 'Reviews code and validates quality. Read-only access, lightweight model.',
     emoji: '\ud83d\udd2c',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['code_read', 'quality_review', 'security_audit'],
     openclawTemplateType: 'reviewer',
   },
@@ -351,7 +370,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Researcher',
     description: 'Browses the web and gathers information. No code execution.',
     emoji: '\ud83d\udd0d',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['web_browse', 'data_gathering', 'summarization'],
     openclawTemplateType: 'researcher',
   },
@@ -360,7 +379,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Content Creator',
     description: 'Generates and edits written content. No code execution or browsing.',
     emoji: '\u270f\ufe0f',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['content_write', 'content_edit'],
     openclawTemplateType: 'content-creator',
   },
@@ -369,7 +388,7 @@ export const UNIVERSAL_TEMPLATES: UniversalTemplate[] = [
     label: 'Security Auditor',
     description: 'Scans for vulnerabilities. Read-only with shell access for scanning tools.',
     emoji: '\ud83d\udee1\ufe0f',
-    frameworks: ['openclaw', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
+    frameworks: ['openclaw', 'orca', 'generic', 'langgraph', 'crewai', 'autogen', 'claude-sdk'],
     capabilities: ['code_read', 'shell_execute', 'security_scan'],
     openclawTemplateType: 'security-auditor',
   },
@@ -406,8 +425,8 @@ export function listFrameworks(): FrameworkInfo[] {
 }
 
 /**
- * Resolve a universal template to its OpenClaw-specific config (if applicable).
- * For non-OpenClaw frameworks, returns the universal template metadata
+ * Resolve a universal template to its gateway-specific config (if applicable).
+ * For other frameworks, returns the universal template metadata
  * since config is managed externally by the framework.
  */
 export function resolveTemplateConfig(

@@ -49,7 +49,7 @@ export async function GET(
  *
  * Body: {
  *   role?: string
- *   gateway_config?: object   - OpenClaw agent config fields to update
+ *   gateway_config?: object   - Agent gateway config fields to update
  *   write_to_gateway?: boolean - Defaults to true when gateway_config exists
  * }
  */
@@ -236,9 +236,9 @@ export async function DELETE(
       try {
         await runOpenClaw(['agents', 'delete', openclawId, '--force'], { timeoutMs: 30000 })
       } catch (err: any) {
-        logger.error({ err, openclawId, agent: agent.name }, 'Failed to remove OpenClaw agent/workspace')
+        logger.error({ err, openclawId, agent: agent.name }, 'Failed to remove gateway agent/workspace')
         return NextResponse.json(
-          { error: `Failed to remove OpenClaw workspace for ${agent.name}: ${err?.message || 'unknown error'}` },
+          { error: `Failed to remove gateway workspace for ${agent.name}: ${err?.message || 'unknown error'}` },
           { status: 502 }
         )
       }
@@ -254,8 +254,8 @@ export async function DELETE(
           .replace(/^-+|-+$/g, '') || agent.name
       await removeAgentFromConfig({ id: openclawId, name: agent.name })
     } catch (err: any) {
-      configCleanupWarning = `OpenClaw config cleanup skipped for ${agent.name}: ${err?.message || 'unknown error'}`
-      logger.warn({ err, agent: agent.name }, 'Failed to remove OpenClaw agent config entry')
+      configCleanupWarning = `Gateway config cleanup skipped for ${agent.name}: ${err?.message || 'unknown error'}`
+      logger.warn({ err, agent: agent.name }, 'Failed to remove gateway agent config entry')
     }
 
     db.prepare('DELETE FROM agents WHERE id = ? AND workspace_id = ?').run(agent.id, workspaceId)

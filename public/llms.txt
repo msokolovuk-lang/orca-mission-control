@@ -1,8 +1,8 @@
-# Mission Control
+# ИИ-Ателье «Центр управления»
 
 > Open-source dashboard for AI agent orchestration.
 
-Mission Control is a self-hosted dashboard for managing AI agent fleets. It provides task dispatch, cost tracking, quality review gates, recurring task scheduling, and multi-agent coordination — all powered by SQLite with zero external dependencies.
+ИИ-Ателье «Центр управления» — self-hosted панель для управления флотами AI-агентов: диспетчеризация задач, учёт стоимости, ворота качества, расписания и координация агентов на SQLite без внешних зависимостей.
 
 ## Key Features
 - Agent management with full lifecycle (register, heartbeat, wake, retire)
