@@ -9,10 +9,8 @@ type LogoProps = {
 export function Logo({ compact = false, className }: LogoProps) {
   if (compact) {
     return (
-      <span className={cn('inline-flex items-center gap-1.5 leading-none', className)}>
+      <span className={cn('inline-flex items-center leading-none', className)}>
         <span className="font-mono font-bold text-[#0CBCCE]">ИИ</span>
-        <span className="text-[#0CBCCE]">•</span>
-        <span className="font-mono font-bold text-foreground">Ателье</span>
       </span>
     )
   }

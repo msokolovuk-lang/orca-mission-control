@@ -32,6 +32,12 @@ When upstream merges overwrite branding, re-apply values from this file first.
 - Layout metadata points to `public/favicon.svg` as the active favicon.
 - `public/icon.svg`, `public/apple-icon.png`, and `public/og-image.png` were not present and were not added in this phase.
 
+## Nav rail
+
+- `src/components/layout/nav-rail.tsx` is the active upstream nav rail used by `src/app/[[...panel]]/page.tsx`.
+- `src/nav-rail.tsx` exists in upstream history but is currently not imported.
+- Dedup decision for B.1-FIX: keep both files to avoid deleting upstream code paths blindly; continue branding only in the active `src/components/layout/nav-rail.tsx`.
+
 ## Upstream Merge Workflow
 
 1. Merge upstream normally.
