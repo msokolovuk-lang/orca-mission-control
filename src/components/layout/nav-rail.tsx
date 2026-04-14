@@ -31,7 +31,6 @@ const navGroups: NavGroup[] = [
   {
     id: 'core',
     items: [
-      { id: 'overview', label: 'Overview', icon: <OverviewIcon />, priority: true, essential: true },
       { id: 'agents', label: 'Agents', icon: <AgentsIcon />, priority: true, essential: true },
       { id: 'tasks', label: 'Tasks', icon: <TasksIcon />, priority: true, essential: true },
       { id: 'chat', label: 'Chat', icon: <ChatIcon />, priority: true, essential: true },
@@ -62,7 +61,6 @@ const navGroups: NavGroup[] = [
 
 // Map nav item IDs to translation keys in the 'nav' namespace
 const navItemTranslationKeys: Record<string, string> = {
-  overview: 'overview',
   agents: 'agents',
   tasks: 'tasks',
   chat: 'chat',
@@ -941,8 +939,8 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                   onClick={async () => {
                     if (interfaceMode === 'essential') return
                     setInterfaceMode('essential')
-                    const essentialIds = new Set(['overview', 'agents', 'tasks', 'chat', 'memory', 'activity', 'cost-tracker', 'notifications', 'settings'])
-                    if (!essentialIds.has(activeTab)) navigateToPanel('overview')
+                    const essentialIds = new Set(['agents', 'tasks', 'chat', 'memory', 'activity', 'cost-tracker', 'notifications', 'settings'])
+                    if (!essentialIds.has(activeTab)) navigateToPanel('agents')
                     try { await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: { 'general.interface_mode': 'essential' } }) }) } catch {}
                   }}
                   className={`flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors ${
@@ -1217,17 +1215,6 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
 }
 
 // SVG Icons (16x16 viewbox, stroke-based)
-function OverviewIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="1" width="6" height="6" rx="1" />
-      <rect x="9" y="1" width="6" height="6" rx="1" />
-      <rect x="1" y="9" width="6" height="6" rx="1" />
-      <rect x="9" y="9" width="6" height="6" rx="1" />
-    </svg>
-  )
-}
-
 function AgentsIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

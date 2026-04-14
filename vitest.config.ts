@@ -54,7 +54,6 @@ export default defineConfig(async () => {
           'src/lib/use-server-events.ts',
           'src/lib/use-smart-poll.ts',
           'src/lib/adapters/**',
-          'src/lib/dashboard-widgets.ts',
           'src/lib/docs-knowledge.ts',
           'src/lib/event-bus.ts',
           'src/lib/auto-credentials.ts',

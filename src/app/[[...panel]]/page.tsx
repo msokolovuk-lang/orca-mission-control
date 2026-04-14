@@ -1,10 +1,9 @@
 'use client'
 
-import { createElement, useEffect, useMemo, useState } from 'react'
+import { createElement, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { NavRail } from '@/components/layout/nav-rail'
 import { HeaderBar } from '@/components/layout/header-bar'
-import { Dashboard } from '@/components/dashboard/dashboard'
 import { MemoryBrowserPanel } from '@/components/panels/memory-browser-panel'
 import { CostTrackerPanel } from '@/components/panels/cost-tracker-panel'
 import { TaskBoardPanel } from '@/components/panels/task-board-panel'
@@ -57,7 +56,11 @@ const bootLabelKeys: Record<string, string> = {
 
 function renderPluginPanel(panelId: string) {
   const pluginPanel = getPluginPanel(panelId)
-  return pluginPanel ? createElement(pluginPanel) : <Dashboard />
+  return pluginPanel ? createElement(pluginPanel) : (
+    <div className="flex flex-col items-center justify-center py-24 px-6 text-center text-sm text-muted-foreground">
+      No panel is registered for &quot;{panelId}&quot;.
+    </div>
+  )
 }
 
 export default function Home() {
@@ -69,8 +72,14 @@ export default function Home() {
 
   // Sync URL → Zustand activeTab
   const pathname = usePathname()
-  const panelFromUrl = pathname === '/' ? 'overview' : pathname.slice(1)
+  const panelFromUrl = pathname === '/' ? 'agents' : pathname.slice(1)
   const normalizedPanel = panelFromUrl === 'sessions' ? 'chat' : panelFromUrl
+
+  useLayoutEffect(() => {
+    if (pathname === '/') {
+      router.replace('/agents')
+    }
+  }, [pathname, router])
 
   useEffect(() => {
     completeNavigationTiming(pathname)
@@ -381,7 +390,7 @@ export default function Home() {
 }
 
 const ESSENTIAL_PANELS = new Set([
-  'overview', 'agents', 'tasks', 'chat', 'memory', 'activity', 'cost-tracker', 'notifications', 'settings',
+  'agents', 'tasks', 'chat', 'memory', 'activity', 'cost-tracker', 'notifications', 'settings',
 ])
 
 function ContentRouter({ tab }: { tab: string }) {
@@ -411,9 +420,9 @@ function ContentRouter({ tab }: { tab: string }) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigateToPanel('overview')}
+            onClick={() => navigateToPanel('agents')}
           >
-            {tp('goToOverview')}
+            {tp('goToAgents')}
           </Button>
         </div>
       </div>
@@ -422,9 +431,6 @@ function ContentRouter({ tab }: { tab: string }) {
 
   switch (tab) {
     case 'overview':
-      return <Dashboard />
-    case 'tasks':
-      return <TaskBoardPanel />
     case 'agents':
       return (
         <>
@@ -432,6 +438,8 @@ function ContentRouter({ tab }: { tab: string }) {
           <AgentSquadPanelPhase3 />
         </>
       )
+    case 'tasks':
+      return <TaskBoardPanel />
     case 'notifications':
       return <NotificationsPanel />
     case 'sessions':

@@ -554,7 +554,7 @@ export const useMissionControl = create<MissionControlStore>()(
     setCurrentUser: (user) => set({ currentUser: user }),
 
     // UI State — sidebar & layout persistence
-    activeTab: 'overview',
+    activeTab: 'agents',
     sidebarExpanded: (() => {
       if (typeof window === 'undefined') return false
       try { return localStorage.getItem('mc-sidebar-expanded') === 'true' } catch { return false }

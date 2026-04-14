@@ -889,10 +889,10 @@ function InterfaceModeSelector() {
       })
       // If switching to essential and on a hidden panel, redirect
       if (mode === 'essential') {
-        const essentialIds = new Set(['overview', 'agents', 'tasks', 'chat', 'activity', 'logs', 'settings'])
+        const essentialIds = new Set(['agents', 'tasks', 'chat', 'memory', 'activity', 'cost-tracker', 'notifications', 'settings'])
         const store = useMissionControl.getState()
         if (!essentialIds.has(store.activeTab)) {
-          navigateToPanel('overview')
+          navigateToPanel('agents')
         }
       }
     } catch {}
@@ -907,8 +907,8 @@ function InterfaceModeSelector() {
       </p>
       <div className="space-y-2">
         {([
-          { value: 'essential' as const, label: 'Essential', desc: 'Focused view with core panels only — Overview, Agents, Tasks, Chat, Activity, Logs, Settings.' },
-          { value: 'full' as const, label: 'Full', desc: 'All panels and advanced features including Memory, Cron, Webhooks, Alerts, Audit, and more.' },
+          { value: 'essential' as const, label: 'Essential', desc: 'Focused view with core panels only — Agents, Tasks, Chat, Memory, Activity, Cost tracker, Notifications, Settings.' },
+          { value: 'full' as const, label: 'Full', desc: 'All panels and advanced features including Security, Users, Audit, and more.' },
         ]).map(option => (
           <button
             key={option.value}

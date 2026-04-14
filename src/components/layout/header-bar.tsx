@@ -25,10 +25,9 @@ interface SearchResult {
 }
 
 const QUICK_NAV_COMMANDS: Array<{ panel: string; titleKey: string; title: string; aliases: string[] }> = [
-  { panel: 'overview', titleKey: 'goToOverview', title: 'Go to Overview', aliases: ['home', 'dashboard'] },
+  { panel: 'agents', titleKey: 'goToAgents', title: 'Go to Agents', aliases: ['agent squad', 'workers', 'home', 'dashboard'] },
   { panel: 'chat', titleKey: 'goToChat', title: 'Go to Chat', aliases: ['sessions', 'messages'] },
   { panel: 'tasks', titleKey: 'goToTasks', title: 'Go to Tasks', aliases: ['task board', 'tickets'] },
-  { panel: 'agents', titleKey: 'goToAgents', title: 'Go to Agents', aliases: ['agent squad', 'workers'] },
   { panel: 'activity', titleKey: 'goToActivityFeed', title: 'Go to Activity Feed', aliases: ['events', 'feed'] },
   { panel: 'notifications', titleKey: 'goToNotifications', title: 'Go to Notifications', aliases: ['alerts inbox'] },
   { panel: 'tokens', titleKey: 'goToTokenUsage', title: 'Go to Token Usage', aliases: ['cost', 'spend'] },
@@ -124,7 +123,7 @@ export function HeaderBar() {
       audit: 'audit', message: 'agents', notification: 'notifications',
       webhook: 'notifications', pipeline: 'agents', alert_rule: 'notifications',
     }
-    navigateToPanel(typeToTab[result.type] || 'overview')
+    navigateToPanel(typeToTab[result.type] || 'agents')
     setSearchOpen(false)
     setSearchQuery('')
     setSearchResults([])
