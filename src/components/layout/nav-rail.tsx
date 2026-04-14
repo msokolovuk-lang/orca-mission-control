@@ -131,6 +131,10 @@ export function NavRail() {
   const prefetchPanel = usePrefetchPanel()
   const tn = useTranslations('nav')
   const tc = useTranslations('common')
+  const [orcaStatus, setOrcaStatus] = useState<{ loading: boolean; connected: boolean }>({
+    loading: true,
+    connected: false,
+  })
 
   // Translate a nav item label using the translation key map
   function tLabel(id: string, fallback: string): string {
@@ -171,6 +175,33 @@ export function NavRail() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTenant?.id])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchOrcaStatus = async () => {
+      try {
+        const response = await fetch('/api/orca/status', { cache: 'no-store' })
+        const payload = await response.json().catch(() => ({}))
+        if (cancelled) return
+        setOrcaStatus({
+          loading: false,
+          connected: Boolean(payload?.connected),
+        })
+      } catch {
+        if (cancelled) return
+        setOrcaStatus({ loading: false, connected: false })
+      }
+    }
+
+    fetchOrcaStatus()
+    const timer = window.setInterval(fetchOrcaStatus, 15_000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [])
 
   // In local mode, hide gateway-only panels. Non-admin users don't see admin-only panels.
   // In essential mode, hide non-essential panels.
@@ -245,9 +276,21 @@ export function NavRail() {
         <div className={`flex items-center shrink-0 ${sidebarExpanded ? 'px-3 py-3 gap-2.5' : 'flex-col py-3 gap-2'}`}>
           <Logo compact className="shrink-0" />
           {sidebarExpanded && (
-            <div className="flex items-baseline gap-2 truncate flex-1 min-w-0">
-              <span className="text-sm font-semibold text-foreground truncate">ИИ-Ателье</span>
-              <span className="text-2xs text-muted-foreground font-mono-tight shrink-0">v{APP_VERSION}</span>
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-baseline gap-2 truncate">
+                <span className="text-sm font-semibold text-foreground truncate">ИИ-Ателье</span>
+                <span className="text-2xs text-muted-foreground font-mono-tight shrink-0">v{APP_VERSION}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    orcaStatus.loading ? 'bg-muted-foreground/60' : (orcaStatus.connected ? 'bg-green-500' : 'bg-red-500')
+                  }`}
+                />
+                <span>
+                  {orcaStatus.loading ? 'Orca …' : (orcaStatus.connected ? 'Orca' : 'Orca offline')}
+                </span>
+              </div>
             </div>
           )}
           <Button
