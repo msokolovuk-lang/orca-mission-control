@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { listTasks } from '@/lib/orca/client'
 import type { FrameworkAdapter, AgentRegistration, HeartbeatPayload, TaskReport } from '../adapter'
 import { getAdapter, listAdapters } from '../index'
 
@@ -31,6 +32,12 @@ vi.mock('../adapter', async (importOriginal) => {
     queryPendingAssignments: (...args: unknown[]) => mockQuery(...args),
   }
 })
+
+vi.mock('@/lib/orca/client', () => ({
+  listTasks: vi.fn(),
+}))
+
+const mockListTasks = vi.mocked(listTasks)
 
 // ─── Test Data ───────────────────────────────────────────────────────────────
 
@@ -58,8 +65,6 @@ const testReport: TaskReport = {
 // ─── Shared Compliance Tests ─────────────────────────────────────────────────
 
 const ALL_FRAMEWORKS = ['openclaw', 'generic', 'crewai', 'langgraph', 'autogen', 'claude-sdk', 'orca']
-/** Adapters that fully implement the event + assignment contract (orca is a read-only stub until B.2.1). */
-const COMPLIANCE_FRAMEWORKS = ALL_FRAMEWORKS.filter((f) => f !== 'orca')
 
 describe('Adapter Registry', () => {
   it('lists all registered adapters', () => {
@@ -81,14 +86,15 @@ describe('Adapter Registry', () => {
   })
 })
 
-// Run the full compliance suite for adapters that broadcast + delegate assignments
-describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framework) => {
+// Run the full compliance suite for EVERY adapter
+describe.each(ALL_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framework) => {
   let adapter: FrameworkAdapter
 
   beforeEach(() => {
     adapter = getAdapter(framework)
     mockBroadcast.mockClear()
     mockQuery.mockClear()
+    mockListTasks.mockClear()
   })
 
   // ── 1. Interface Compliance ──────────────────────────────────────────────
@@ -108,6 +114,7 @@ describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framewo
 
     it('all methods return promises', async () => {
       mockQuery.mockResolvedValue([])
+      mockListTasks.mockResolvedValue([])
 
       const results = [
         adapter.register(testAgent),
@@ -264,6 +271,27 @@ describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framewo
         { taskId: '1', description: 'Fix bug', priority: 1 },
         { taskId: '2', description: 'Write tests', priority: 2 },
       ]
+      if (framework === 'orca') {
+        mockListTasks.mockResolvedValue([
+          { id: '1', title: 'Fix bug', description: '', status: 'pending', extra: {} },
+          { id: '2', title: 'Write tests', description: '', status: 'pending', extra: {} },
+        ])
+        const result = await adapter.getAssignments('test-agent-001')
+        expect(mockListTasks).toHaveBeenCalledWith({ agentId: 'test-agent-001', status: 'pending' })
+        expect(result).toEqual([
+          {
+            taskId: '1',
+            description: 'Fix bug',
+            metadata: { framework: 'orca', status: 'pending', orcaTaskId: '1', raw: {} },
+          },
+          {
+            taskId: '2',
+            description: 'Write tests',
+            metadata: { framework: 'orca', status: 'pending', orcaTaskId: '2', raw: {} },
+          },
+        ])
+        return
+      }
       mockQuery.mockResolvedValue(mockAssignments)
 
       const result = await adapter.getAssignments('test-agent-001')
@@ -273,7 +301,11 @@ describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framewo
     })
 
     it('returns empty array when no assignments', async () => {
-      mockQuery.mockResolvedValue([])
+      if (framework === 'orca') {
+        mockListTasks.mockResolvedValue([])
+      } else {
+        mockQuery.mockResolvedValue([])
+      }
 
       const result = await adapter.getAssignments('idle-agent')
 
@@ -281,7 +313,11 @@ describe.each(COMPLIANCE_FRAMEWORKS)('FrameworkAdapter compliance: %s', (framewo
     })
 
     it('does not broadcast events', async () => {
-      mockQuery.mockResolvedValue([])
+      if (framework === 'orca') {
+        mockListTasks.mockResolvedValue([])
+      } else {
+        mockQuery.mockResolvedValue([])
+      }
 
       await adapter.getAssignments('test-agent-001')
 
@@ -337,12 +373,13 @@ describe('Cross-adapter consistency', () => {
   beforeEach(() => {
     mockBroadcast.mockClear()
     mockQuery.mockClear()
+    mockListTasks.mockClear()
   })
 
   it('all adapters emit the same event types for the same actions', async () => {
     const eventsByFramework: Record<string, string[]> = {}
 
-    for (const fw of COMPLIANCE_FRAMEWORKS) {
+    for (const fw of ALL_FRAMEWORKS) {
       mockBroadcast.mockClear()
       mockQuery.mockResolvedValue([])
 
@@ -357,17 +394,31 @@ describe('Cross-adapter consistency', () => {
 
     const expected = ['agent.created', 'agent.status_changed', 'task.updated', 'agent.status_changed']
 
-    for (const fw of COMPLIANCE_FRAMEWORKS) {
+    for (const fw of ALL_FRAMEWORKS) {
       expect(eventsByFramework[fw]).toEqual(expected)
     }
   })
 
   it('all adapters return the same assignment data for the same agent', async () => {
     const mockAssignments = [{ taskId: '99', description: 'Shared task', priority: 0 }]
-    mockQuery.mockResolvedValue(mockAssignments)
 
-    for (const fw of COMPLIANCE_FRAMEWORKS) {
+    for (const fw of ALL_FRAMEWORKS) {
       const adapter = getAdapter(fw)
+      if (fw === 'orca') {
+        mockListTasks.mockResolvedValue([
+          { id: '99', title: 'Shared task', description: '', status: 'pending', extra: {} },
+        ])
+        const result = await adapter.getAssignments('shared-agent')
+        expect(result).toEqual([
+          {
+            taskId: '99',
+            description: 'Shared task',
+            metadata: { framework: 'orca', status: 'pending', orcaTaskId: '99', raw: {} },
+          },
+        ])
+        continue
+      }
+      mockQuery.mockResolvedValue(mockAssignments)
       const result = await adapter.getAssignments('shared-agent')
       expect(result).toEqual(mockAssignments)
     }

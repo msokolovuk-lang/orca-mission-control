@@ -1,26 +1,45 @@
+import { eventBus } from '@/lib/event-bus'
 import { listTasks } from '@/lib/orca/client'
 import type { FrameworkAdapter, AgentRegistration, HeartbeatPayload, TaskReport, Assignment } from './adapter'
 
-export class CorporateVaultAdapter implements FrameworkAdapter {
+export class OrcaAdapter implements FrameworkAdapter {
   readonly framework = 'orca'
 
-  async register(_agent: AgentRegistration): Promise<void> {
-    console.debug('[orca-adapter] register not implemented in B.2, use B.2.1')
+  async register(agent: AgentRegistration): Promise<void> {
+    eventBus.broadcast('agent.created', {
+      id: agent.agentId,
+      name: agent.name,
+      framework: agent.framework || this.framework,
+      status: 'online',
+      ...(agent.metadata ?? {}),
+    })
   }
 
-  async heartbeat(_payload: HeartbeatPayload): Promise<void> {
-    console.debug('[orca-adapter] heartbeat not implemented in B.2, use B.2.1')
+  async heartbeat(payload: HeartbeatPayload): Promise<void> {
+    eventBus.broadcast('agent.status_changed', {
+      id: payload.agentId,
+      status: payload.status,
+      metrics: payload.metrics ?? {},
+      framework: this.framework,
+    })
   }
 
-  async reportTask(_report: TaskReport): Promise<void> {
-    console.debug('[orca-adapter] reportTask not implemented in B.2, use B.2.1')
+  async reportTask(report: TaskReport): Promise<void> {
+    eventBus.broadcast('task.updated', {
+      id: report.taskId,
+      agentId: report.agentId,
+      progress: report.progress,
+      status: report.status,
+      output: report.output,
+      framework: this.framework,
+    })
   }
 
   async getAssignments(agentId: string): Promise<Assignment[]> {
     try {
       const tasks = await listTasks({ agentId, status: 'pending' })
       return tasks.map((task) => {
-        const title = typeof task.title === 'string' ? task.title : `Корпоративная задача ${task.id}`
+        const title = typeof task.title === 'string' ? task.title : `Orca task ${task.id}`
         const descriptionPart = typeof task.description === 'string' ? task.description : ''
         return {
           taskId: task.id,
@@ -39,7 +58,11 @@ export class CorporateVaultAdapter implements FrameworkAdapter {
     }
   }
 
-  async disconnect(_agentId: string): Promise<void> {
-    console.debug('[orca-adapter] disconnect not implemented in B.2, use B.2.1')
+  async disconnect(agentId: string): Promise<void> {
+    eventBus.broadcast('agent.status_changed', {
+      id: agentId,
+      status: 'offline',
+      framework: this.framework,
+    })
   }
 }

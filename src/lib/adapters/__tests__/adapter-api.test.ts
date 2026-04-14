@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { listTasks } from '@/lib/orca/client'
 import { getAdapter, listAdapters } from '../index'
 
 // These tests verify the API contract from the external agent's perspective.
@@ -29,6 +30,11 @@ vi.mock('../adapter', async (importOriginal) => {
   }
 })
 
+vi.mock('@/lib/orca/client', () => ({
+  listTasks: vi.fn(),
+}))
+
+const mockListTasks = vi.mocked(listTasks)
 
 // Simulate what POST /api/adapters does internally
 async function simulateAdapterAction(
@@ -98,12 +104,16 @@ describe('Adapter API dispatch', () => {
   beforeEach(() => {
     mockBroadcast.mockClear()
     mockQuery.mockClear()
+    mockListTasks.mockClear()
   })
 
   // Full lifecycle for every framework
-  describe.each(listAdapters().filter((f) => f !== 'orca'))('Full agent lifecycle: %s', (framework) => {
+  describe.each(listAdapters())('Full agent lifecycle: %s', (framework) => {
     it('register → heartbeat → report → assignments → disconnect', async () => {
       mockQuery.mockResolvedValue([{ taskId: '1', description: 'Do stuff', priority: 1 }])
+      mockListTasks.mockResolvedValue([
+        { id: '1', title: 'Do stuff', description: '', status: 'pending', extra: {} },
+      ])
 
       // 1. Register
       const reg = await simulateAdapterAction(framework, 'register', {

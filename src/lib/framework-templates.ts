@@ -1,13 +1,13 @@
 /**
  * Framework-Agnostic Template System
  *
- * Extends the existing gateway templates with framework-neutral archetypes
+ * Extends the existing OpenClaw templates with framework-neutral archetypes
  * that any adapter can use. Each framework template defines:
  *   - What the agent does (role, capabilities)
  *   - How it connects (framework-specific connection config)
  *   - What permissions it needs (tool scopes)
  *
- * The existing AGENT_TEMPLATES in agent-templates.ts remain for gateway-native
+ * The existing AGENT_TEMPLATES in agent-templates.ts remain for OpenClaw-native
  * use. This module wraps them with a framework-aware registry.
  */
 
@@ -40,38 +40,36 @@ export interface FrameworkInfo {
 export const FRAMEWORK_REGISTRY: Record<string, FrameworkInfo> = {
   openclaw: {
     id: 'openclaw',
-    label: 'Агентский шлюз',
+    label: 'OpenClaw',
     description: 'Native gateway-managed agents with full lifecycle control',
     docsUrl: 'https://github.com/openclaw/openclaw',
     connection: {
       connectionMode: 'websocket',
       heartbeatInterval: 30,
       setupHints: [
-        'Агенты управляются через шлюз',
-        'Конфигурация синхронизируется через openclaw.json',
-        'Используйте «pnpm openclaw agents add» для выдачи агентов',
+        'Agents are managed via the OpenClaw gateway',
+        'Config syncs bidirectionally via openclaw.json',
+        'Use "pnpm openclaw agents add" to provision',
       ],
-      exampleSnippet: `# Агенты шлюза управляются автоматически.
-# Ручная регистрация не нужна — синхронизация выполняется сама.
-# См. openclaw.json в каталоге состояния.`,
+      exampleSnippet: `# OpenClaw agents are auto-managed by the gateway.
+# No manual registration needed — sync happens automatically.
+# See: openclaw.json in your state directory.`,
     },
   },
   orca: {
     id: 'orca',
-    label: 'Корпоративное хранилище',
-    description: 'Синхронизация агентов и задач с корпоративным контуром (read-only)',
+    label: 'Orca',
+    description: 'Read-only task bridge to the configured corporate task API.',
     docsUrl: '',
     connection: {
       connectionMode: 'polling',
       heartbeatInterval: 60,
       setupHints: [
-        'Настройте ORCA_GATEWAY_URL и ORCA_GATEWAY_TOKEN',
-        'Используйте адаптер orca в /api/adapters для назначений',
+        'Set ORCA_GATEWAY_URL and ORCA_GATEWAY_TOKEN',
+        'POST to /api/adapters with framework: "orca" for assignments',
       ],
-      exampleSnippet: `# Корпоративный контур — назначения через API адаптера
-curl -X POST http://localhost:3000/api/adapters \\
+      exampleSnippet: `curl -X POST http://localhost:3000/api/adapters \\
   -H "Content-Type: application/json" \\
-  -H "x-api-key: YOUR_API_KEY" \\
   -d '{"framework":"orca","action":"assignments","payload":{"agentId":"my-agent"}}'`,
     },
   },
@@ -191,7 +189,7 @@ MC_URL = "http://localhost:3000"
 HEADERS = {"Content-Type": "application/json", "x-api-key": "YOUR_API_KEY"}
 
 def register_crew_agent(agent: Agent):
-    """Register a CrewAI agent with ИИ-Ателье «Центр управления»."""
+    """Register a CrewAI agent with Mission Control."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "crewai",
         "action": "register",
@@ -207,7 +205,7 @@ def register_crew_agent(agent: Agent):
     })
 
 def report_task_complete(agent_id: str, task_id: str, output: str):
-    """Report task completion to ИИ-Ателье «Центр управления»."""
+    """Report task completion to Mission Control."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "crewai",
         "action": "report",
@@ -242,7 +240,7 @@ MC_URL = "http://localhost:3000"
 HEADERS = {"Content-Type": "application/json", "x-api-key": "YOUR_API_KEY"}
 
 def register_autogen_agent(agent_name: str, system_message: str):
-    """Register an AutoGen agent with ИИ-Ателье «Центр управления»."""
+    """Register an AutoGen agent with Mission Control."""
     requests.post(f"{MC_URL}/api/adapters", headers=HEADERS, json={
         "framework": "autogen",
         "action": "register",
@@ -328,7 +326,7 @@ export interface UniversalTemplate {
   frameworks: string[]
   /** Role-based capabilities (framework-agnostic) */
   capabilities: string[]
-  /** Gateway template id when framework is openclaw */
+  /** The OpenClaw template to use when framework is openclaw */
   openclawTemplateType?: string
 }
 
@@ -425,8 +423,8 @@ export function listFrameworks(): FrameworkInfo[] {
 }
 
 /**
- * Resolve a universal template to its gateway-specific config (if applicable).
- * For other frameworks, returns the universal template metadata
+ * Resolve a universal template to its OpenClaw-specific config (if applicable).
+ * For non-OpenClaw frameworks, returns the universal template metadata
  * since config is managed externally by the framework.
  */
 export function resolveTemplateConfig(
