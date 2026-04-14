@@ -32,14 +32,8 @@ const QUICK_NAV_COMMANDS: Array<{ panel: string; titleKey: string; title: string
   { panel: 'activity', titleKey: 'goToActivityFeed', title: 'Go to Activity Feed', aliases: ['events', 'feed'] },
   { panel: 'notifications', titleKey: 'goToNotifications', title: 'Go to Notifications', aliases: ['alerts inbox'] },
   { panel: 'tokens', titleKey: 'goToTokenUsage', title: 'Go to Token Usage', aliases: ['cost', 'spend'] },
-  { panel: 'logs', titleKey: 'goToLogs', title: 'Go to Logs', aliases: ['log viewer'] },
   { panel: 'memory', titleKey: 'goToMemoryBrowser', title: 'Go to Memory Browser', aliases: ['knowledge', 'notes'] },
-  { panel: 'integrations', titleKey: 'goToIntegrations', title: 'Go to Integrations', aliases: ['providers', 'api keys'] },
   { panel: 'settings', titleKey: 'goToSettings', title: 'Go to Settings', aliases: ['preferences', 'config'] },
-  { panel: 'gateways', titleKey: 'goToGateways', title: 'Go to Gateways', aliases: ['gateway manager'] },
-  { panel: 'github', titleKey: 'goToGithubSync', title: 'Go to GitHub Sync', aliases: ['github', 'sync'] },
-  { panel: 'office', titleKey: 'goToOffice', title: 'Go to Office', aliases: ['workspace', 'team'] },
-  { panel: 'skills', titleKey: 'goToSkills', title: 'Go to Skills', aliases: ['skill packs', 'agent skills'] },
 ]
 
 export function HeaderBar() {
@@ -128,7 +122,7 @@ export function HeaderBar() {
     const typeToTab: Record<string, string> = {
       task: 'tasks', agent: 'agents', activity: 'activity',
       audit: 'audit', message: 'agents', notification: 'notifications',
-      webhook: 'webhooks', pipeline: 'agents', alert_rule: 'alerts',
+      webhook: 'notifications', pipeline: 'agents', alert_rule: 'notifications',
     }
     navigateToPanel(typeToTab[result.type] || 'overview')
     setSearchOpen(false)

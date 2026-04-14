@@ -9,7 +9,6 @@ import { useNavigateToPanel } from '@/lib/navigation'
 import { SecurityScanCard } from '@/components/onboarding/security-scan-card'
 import { AgentRuntimesSection } from '@/components/settings/agent-runtimes-section'
 import { Loader } from '@/components/ui/loader'
-import { clearOnboardingDismissedThisSession, clearOnboardingReplayFromStart } from '@/lib/onboarding-session'
 import { resolveCoordinatorDeliveryTarget, type CoordinatorAgentRecord } from '@/lib/coordinator-routing'
 import type { GatewaySession } from '@/lib/sessions'
 
@@ -106,7 +105,7 @@ const subscriptionDropdowns: Record<string, { label: string; value: string }[]> 
 
 export function SettingsPanel() {
   const t = useTranslations('settings')
-  const { currentUser, setShowOnboarding } = useMissionControl()
+  const { currentUser } = useMissionControl()
   const navigateToPanel = useNavigateToPanel()
   const [settings, setSettings] = useState<Setting[]>([])
   const [grouped, setGrouped] = useState<Record<string, Setting[]>>({})
@@ -133,7 +132,6 @@ export function SettingsPanel() {
   const [coordinatorSessions, setCoordinatorSessions] = useState<CoordinatorSession[]>([])
 
   // Replay onboarding state
-  const [replayingOnboarding, setReplayingOnboarding] = useState(false)
 
   // Hermes integration state
   const [hermesStatus, setHermesStatus] = useState<{
@@ -525,40 +523,6 @@ export function SettingsPanel() {
               }}
             >
               {gwBackupRunning ? t('backingUp') : t('backupGatewayState')}
-            </Button>
-          </div>
-
-          {/* Replay Onboarding */}
-          <div className="flex items-center gap-3 p-3 bg-surface-1/50 border border-border/30 rounded-lg">
-            <div className="flex-1">
-              <p className="text-xs font-medium">{t('onboarding')}</p>
-              <p className="text-2xs text-muted-foreground">{t('onboardingDescription')}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="xs"
-              className="text-2xs"
-              disabled={replayingOnboarding}
-              onClick={async () => {
-                setReplayingOnboarding(true)
-                try {
-                  await fetch('/api/onboarding', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'reset' }),
-                  })
-                  clearOnboardingDismissedThisSession()
-                  clearOnboardingReplayFromStart()
-                  setShowOnboarding(true)
-                  showFeedback(true, 'Onboarding reset — wizard will appear on next page load')
-                } catch {
-                  showFeedback(false, 'Failed to reset onboarding')
-                } finally {
-                  setReplayingOnboarding(false)
-                }
-              }}
-            >
-              {replayingOnboarding ? t('resetting') : t('replayOnboarding')}
             </Button>
           </div>
 
