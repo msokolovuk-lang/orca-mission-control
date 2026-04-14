@@ -39,6 +39,19 @@ function normalizeEdge(edge: unknown): { source: string; target: string } | null
   return { source, target }
 }
 
+function normalizeNotePath(input: string): string {
+  return input.replace(/^\/+/, '').replace(/\\/g, '/')
+}
+
+/** Path segments for FastAPI `{path:path}` — encode each segment, keep slashes. */
+function encodeNotePathForUrl(notePath: string): string {
+  return normalizeNotePath(notePath)
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+}
+
 async function requestFirst<T>(paths: string[]): Promise<T> {
   let lastError: unknown
   for (const candidatePath of paths) {
@@ -52,28 +65,23 @@ async function requestFirst<T>(paths: string[]): Promise<T> {
 }
 
 export async function listVaults(): Promise<{ vaults: string[] }> {
-  const payload = await requestFirst<unknown>([
-    '/api/v1/brain/vaults',
-    '/api/v1/brain/vault',
-  ])
+  const payload = await requestFirst<unknown>(['/brain/vaults'])
   return { vaults: readStringList(payload, 'vaults') }
 }
 
 export async function listNotes(vault: string): Promise<{ notes: string[] }> {
   const encodedVault = encodeURIComponent(vault)
   const payload = await requestFirst<unknown>([
-    `/api/v1/brain/vaults/${encodedVault}/notes`,
-    `/api/v1/brain/notes?vault=${encodedVault}`,
+    `/brain/vaults/${encodedVault}/notes`,
   ])
   return { notes: readStringList(payload, 'notes') }
 }
 
 export async function readNote(vault: string, path: string): Promise<BrainNotePayload> {
   const encodedVault = encodeURIComponent(vault)
-  const encodedPath = encodeURIComponent(path)
+  const encodedPath = encodeNotePathForUrl(path)
   const payload = await requestFirst<unknown>([
-    `/api/v1/brain/vaults/${encodedVault}/note?path=${encodedPath}`,
-    `/api/v1/brain/note?vault=${encodedVault}&path=${encodedPath}`,
+    `/brain/vaults/${encodedVault}/notes/${encodedPath}`,
   ])
 
   const record = asRecord(payload)
@@ -99,11 +107,8 @@ export async function getGraph(vault?: string): Promise<BrainGraphPayload> {
   const encodedVault = vault ? encodeURIComponent(vault) : null
   const payload = await requestFirst<unknown>(
     encodedVault
-      ? [
-          `/api/v1/brain/graph?vault=${encodedVault}`,
-          `/api/v1/brain/vaults/${encodedVault}/graph`,
-        ]
-      : ['/api/v1/brain/graph'],
+      ? [`/brain/graph/${encodedVault}`]
+      : ['/brain/graph'],
   )
 
   const record = asRecord(payload)

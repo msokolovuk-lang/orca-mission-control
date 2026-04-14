@@ -30,7 +30,13 @@ function asRecord(value: unknown): OrcaRecord {
 }
 
 function normalizeBaseUrl(input: string): string {
-  return input.replace(/\/+$/, '')
+  let base = input.replace(/\/+$/, '')
+  // If ORCA_GATEWAY_URL already includes /api/v1, strip it so withApiPrefix() does not
+  // produce .../api/v1/api/v1/... (Orca Brain and other routes always add /api/v1).
+  if (base.endsWith(ORCA_API_PREFIX)) {
+    base = base.slice(0, -ORCA_API_PREFIX.length).replace(/\/+$/, '')
+  }
+  return base
 }
 
 function withApiPrefix(path: string): string {
