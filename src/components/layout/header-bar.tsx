@@ -88,7 +88,7 @@ export function HeaderBar() {
           id: -(index + 1),
           title: translatedTitle,
           subtitle: `/${cmd.panel}`,
-          excerpt: cmd.aliases.length ? `Aliases: ${cmd.aliases.join(', ')}` : th('quickNavigation'),
+          excerpt: cmd.aliases.length ? th('aliases', { aliases: cmd.aliases.join(', ') }) : th('quickNavigation'),
           created_at: Date.now(),
           panel: cmd.panel,
           source: 'command' as const,
@@ -288,7 +288,7 @@ export function HeaderBar() {
   }
 
   return (
-    <header role="banner" aria-label="Application header" className="relative z-50 h-14 bg-card/80 backdrop-blur-sm border-b border-border px-3 md:px-4 shrink-0">
+    <header role="banner" aria-label={th('applicationHeader')} className="relative z-50 h-14 bg-card/80 backdrop-blur-sm border-b border-border px-3 md:px-4 shrink-0">
       <div className="h-full flex items-center gap-2 md:gap-3">
         {/* Left: Page title + context */}
         <div className="flex min-w-0 items-center gap-2.5 shrink-0">
@@ -300,9 +300,9 @@ export function HeaderBar() {
               onMouseEnter={() => prefetchPanel('tasks')}
               onFocus={() => prefetchPanel('tasks')}
               className="hidden lg:flex items-center gap-1 text-2xs bg-secondary/50 min-w-0 max-w-[320px]"
-              title={`Scoped to project: ${activeProject.name}`}
+              title={th('scopedToProject', { project: activeProject.name })}
             >
-              <span className="text-muted-foreground/60 truncate">{activeTenant?.display_name || 'Default'}</span>
+              <span className="text-muted-foreground/60 truncate">{activeTenant?.display_name || th('defaultWorkspace')}</span>
               <span className="text-muted-foreground/40">/</span>
               <span className="font-medium text-foreground truncate">{activeProject.name}</span>
             </Button>
@@ -351,7 +351,7 @@ export function HeaderBar() {
             size="icon-sm"
             onClick={openCommandPalette}
             className="md:hidden"
-            title="Search"
+            title={th('search')}
           >
             <SearchIcon />
           </Button>
@@ -384,7 +384,7 @@ export function HeaderBar() {
           className="fixed inset-0 z-[9999] isolate"
           role="dialog"
           aria-modal="true"
-          aria-label="Command search"
+          aria-label={th('commandSearch')}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/30 to-black/30" onClick={() => setSearchOpen(false)} />
           <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -576,6 +576,7 @@ function Stat({ label, value, status }: { label: string; value: string; status?:
 }
 
 function NavigationLatencyStat() {
+  const th = useTranslations('header')
   const [latestMs, setLatestMs] = useState<number | null>(null)
   const [avgMs, setAvgMs] = useState<number | null>(null)
 
@@ -597,7 +598,7 @@ function NavigationLatencyStat() {
   if (latestMs == null) return null
   const latest = `${Math.round(latestMs)}ms`
   const avg = avgMs == null ? '' : ` (${Math.round(avgMs)} avg)`
-  return <Stat label="Nav" value={`${latest}${avg}`} />
+  return <Stat label={th('nav')} value={`${latest}${avg}`} />
 }
 
 function SseBadge({ connected }: { connected: boolean }) {

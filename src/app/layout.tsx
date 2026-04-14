@@ -56,7 +56,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: BRAND.titleFull,
-  description: 'AI Atelier — оркестрация AI-корпорации',
+  description: 'ИИ-Ателье «Центр управления» — оркестрация AI-корпорации',
   metadataBase,
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: BRAND.titleFull,
-    description: 'AI Atelier — оркестрация AI-корпорации',
+    description: 'ИИ-Ателье «Центр управления» — оркестрация AI-корпорации',
     images: [{ url: '/logo.svg', width: 240, height: 80, alt: BRAND.titleFull }],
     type: 'website',
     siteName: BRAND.name,
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: BRAND.titleFull,
-    description: 'AI Atelier — оркестрация AI-корпорации',
+    description: 'ИИ-Ателье «Центр управления» — оркестрация AI-корпорации',
     images: ['/logo.svg'],
   },
   appleWebApp: {

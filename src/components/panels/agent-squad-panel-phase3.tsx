@@ -104,6 +104,7 @@ export function AgentSquadPanelPhase3() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [syncToast, setSyncToast] = useState<string | null>(null)
+  const [syncToastIsError, setSyncToastIsError] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
 
   // Sync agents from gateway config or local disk
@@ -119,18 +120,26 @@ export function AgentSquadPanelPhase3() {
       }
       const data = await response.json()
       if (response.status === 403) {
-        throw new Error('Admin access required for agent sync')
+        throw new Error(t('errors.adminRequiredSync'))
       }
-      if (!response.ok) throw new Error(data.error || 'Sync failed')
+      if (!response.ok) throw new Error(data.error || t('errors.syncFailed'))
       if (source === 'local') {
-        setSyncToast(data.message || 'Local agent sync complete')
+        setSyncToast(data.message || t('toasts.localSyncComplete'))
       } else {
-        setSyncToast(`Synced ${data.synced} agents (${data.created} new, ${data.updated} updated)`)
+        setSyncToast(
+          t('toasts.syncSummary', {
+            synced: data.synced ?? 0,
+            created: data.created ?? 0,
+            updated: data.updated ?? 0,
+          }),
+        )
       }
+      setSyncToastIsError(false)
       fetchAgents()
       setTimeout(() => setSyncToast(null), 5000)
     } catch (err: any) {
-      setSyncToast(`Sync failed: ${err.message}`)
+      setSyncToast(t('toasts.syncFailed', { error: err?.message || t('errors.syncFailed') }))
+      setSyncToastIsError(true)
       setTimeout(() => setSyncToast(null), 5000)
     } finally {
       setSyncing(false)
@@ -150,17 +159,17 @@ export function AgentSquadPanelPhase3() {
         return
       }
       if (response.status === 403) {
-        throw new Error('Access denied')
+        throw new Error(t('errors.accessDenied'))
       }
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to fetch agents')
+        throw new Error(data.error || t('errors.failedToFetch'))
       }
 
       const data = await response.json()
       setAgents(data.agents || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : t('errors.errorOccurred'))
     } finally {
       setLoading(false)
     }
@@ -182,7 +191,7 @@ export function AgentSquadPanelPhase3() {
         })
       })
 
-      if (!response.ok) throw new Error('Failed to update agent status')
+      if (!response.ok) throw new Error(t('errors.failedToUpdateStatus'))
       
       // Update store state
       setAgents(agents.map(agent =>
@@ -198,7 +207,7 @@ export function AgentSquadPanelPhase3() {
       ))
     } catch (error) {
       log.error('Failed to update agent status:', error)
-      setError('Failed to update agent status')
+      setError(t('errors.failedToUpdateStatus'))
     }
   }
 
@@ -215,13 +224,13 @@ export function AgentSquadPanelPhase3() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to wake agent')
+        throw new Error(data.error || t('errors.failedToWake'))
       }
 
       await updateAgentStatus(agentName, 'idle', 'Manually woken via session')
     } catch (error) {
       log.error('Failed to wake agent:', error)
-      setError('Failed to wake agent')
+      setError(t('errors.failedToWake'))
     }
   }
 
@@ -236,11 +245,11 @@ export function AgentSquadPanelPhase3() {
       const response = await fetch(`/api/agents/${agentId}/hide`, {
         method: hide ? 'POST' : 'DELETE',
       })
-      if (!response.ok) throw new Error('Failed to update visibility')
+      if (!response.ok) throw new Error(t('errors.failedToUpdateVisibility'))
       fetchAgents()
     } catch (error) {
       log.error('Failed to toggle agent visibility:', error)
-      setError('Failed to update agent visibility')
+      setError(t('errors.failedToUpdateVisibility'))
     }
   }
 
@@ -257,21 +266,22 @@ export function AgentSquadPanelPhase3() {
     const payload = await response.json().catch(() => ({}))
     if (!response.ok) {
       setAgents(previousAgents)
-      throw new Error(payload?.error || 'Failed to delete agent')
+      throw new Error(payload?.error || t('errors.failedToDelete'))
     }
 
     setSyncToast(
       removeWorkspace
-        ? `Deleted agent and workspace: ${payload?.deleted || agentId}`
-        : `Deleted agent: ${payload?.deleted || agentId}`,
+        ? t('toasts.deletedWithWorkspace', { id: payload?.deleted || agentId })
+        : t('toasts.deleted', { id: payload?.deleted || agentId }),
     )
+    setSyncToastIsError(false)
     await fetchAgents()
     setTimeout(() => setSyncToast(null), 5000)
   }
 
   // Format last seen time
   const formatLastSeen = (timestamp?: number) => {
-    if (!timestamp) return 'Never'
+    if (!timestamp) return t('time.never')
     
     const now = Date.now()
     const diffMs = now - (timestamp * 1000)
@@ -279,10 +289,10 @@ export function AgentSquadPanelPhase3() {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    if (diffMinutes < 1) return 'Just now'
-    if (diffMinutes < 60) return `${diffMinutes}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffMinutes < 1) return t('time.justNow')
+    if (diffMinutes < 60) return t('time.minutesAgo', { count: diffMinutes })
+    if (diffHours < 24) return t('time.hoursAgo', { count: diffHours })
+    if (diffDays < 7) return t('time.daysAgo', { count: diffDays })
     
     return new Date(timestamp * 1000).toLocaleDateString()
   }
@@ -301,7 +311,7 @@ export function AgentSquadPanelPhase3() {
   }, {} as Record<string, number>)
 
   if (loading && agents.length === 0) {
-    return <Loader variant="panel" label="Loading agents" />
+    return <Loader variant="panel" label={t('loadingAgents')} />
   }
 
   return (
@@ -359,7 +369,7 @@ export function AgentSquadPanelPhase3() {
             variant={showHidden ? 'success' : 'secondary'}
             size="sm"
           >
-            {showHidden ? 'Showing hidden' : 'Show hidden'}
+            {showHidden ? t('showingHidden') : t('showHidden')}
           </Button>
           <Button
             onClick={() => setShowCreateModal(true)}
@@ -379,7 +389,7 @@ export function AgentSquadPanelPhase3() {
 
       {/* Sync Toast */}
       {syncToast && (
-        <div className={`p-3 m-4 rounded-lg text-sm ${syncToast.includes('failed') ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-green-500/10 border border-green-500/20 text-green-400'}`}>
+        <div className={`p-3 m-4 rounded-lg text-sm ${syncToastIsError ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-green-500/10 border border-green-500/20 text-green-400'}`}>
           {syncToast}
         </div>
       )}
@@ -427,7 +437,7 @@ export function AgentSquadPanelPhase3() {
                   onClick={() => setSelectedAgent(agent)}
                 >
                   <div className={`pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b ${(statusCardStyles[agent.status] || defaultCardStyle).edge}`} />
-                  {agent.hidden ? <div className="absolute top-2 right-2 text-2xs text-slate-500">hidden</div> : null}
+                  {agent.hidden ? <div className="absolute top-2 right-2 text-2xs text-slate-500">{t('hidden')}</div> : null}
 
                   {/* Header: avatar + name + status */}
                   <div className="flex items-start justify-between mb-2">
@@ -456,7 +466,7 @@ export function AgentSquadPanelPhase3() {
 
                     <div className="flex items-center gap-2 shrink-0">
                       {hasRecentHeartbeat(agent) && (
-                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" title="Recent heartbeat" />
+                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" title={t('recentHeartbeat')} />
                       )}
                       <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs capitalize ${statusBadgeStyles[agent.status]}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${(statusCardStyles[agent.status] || defaultCardStyle).dot}`} />
@@ -493,7 +503,7 @@ export function AgentSquadPanelPhase3() {
                           size="xs"
                           variant="ghost"
                           className="h-6 px-2 text-xs text-cyan-300 hover:bg-cyan-500/15 hover:text-cyan-200"
-                          title="Wake agent via session"
+                          title={t('wakeViaSession')}
                         >
                           {t('wake')}
                         </Button>
@@ -532,7 +542,7 @@ export function AgentSquadPanelPhase3() {
                         variant="ghost"
                         className="h-6 px-2 text-xs text-slate-400 hover:bg-slate-500/15 hover:text-slate-300"
                       >
-                        {agent.hidden ? 'Unhide' : 'Hide'}
+                        {agent.hidden ? t('unhide') : t('hide')}
                       </Button>
                     </div>
                   </div>
@@ -594,6 +604,7 @@ function AgentDetailModalPhase3({
   onWakeAgent: (name: string, sessionKey: string) => Promise<void>
   onDelete: (agentId: number, removeWorkspace: boolean) => Promise<void>
 }) {
+  const tDetail = useTranslations('agentDetail')
   const [agentState, setAgentState] = useState<Agent & { config?: any; working_memory?: string }>(agent as Agent & { config?: any; working_memory?: string })
   const [activeTab, setActiveTab] = useState<'overview' | 'soul' | 'memory' | 'config' | 'tasks' | 'activity' | 'files' | 'tools' | 'channels' | 'cron' | 'models'>('overview')
   const [editing, setEditing] = useState(false)
@@ -691,13 +702,13 @@ function AgentDetailModalPhase3({
   }, [agent.id])
 
   const formatLastSeen = (timestamp?: number) => {
-    if (!timestamp) return 'Never'
+    if (!timestamp) return tDetail('never')
     const diffMs = Date.now() - (timestamp * 1000)
     const diffMinutes = Math.floor(diffMs / (1000 * 60))
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    if (diffMinutes < 1) return 'Just now'
-    if (diffMinutes < 60) return `${diffMinutes}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffMinutes < 1) return tDetail('justNow')
+    if (diffMinutes < 60) return tDetail('minutesAgo', { count: diffMinutes })
+    if (diffHours < 24) return tDetail('hoursAgo', { count: diffHours })
     return new Date(timestamp * 1000).toLocaleDateString()
   }
 
@@ -821,22 +832,22 @@ function AgentDetailModalPhase3({
   }
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'O' },
-    { id: 'files', label: 'Files', icon: 'F' },
-    { id: 'tools', label: 'Tools', icon: 'W' },
-    { id: 'models', label: 'Models', icon: 'P' },
-    { id: 'channels', label: 'Channels', icon: 'H' },
-    { id: 'cron', label: 'Cron', icon: 'R' },
-    { id: 'soul', label: 'SOUL', icon: 'S' },
-    { id: 'memory', label: 'Memory', icon: 'M' },
-    { id: 'tasks', label: 'Tasks', icon: 'T' },
-    { id: 'config', label: 'Config', icon: 'C' },
-    { id: 'activity', label: 'Activity', icon: 'A' }
+    { id: 'overview', label: tDetail('overviewTab'), icon: 'O' },
+    { id: 'files', label: tDetail('filesTab'), icon: 'F' },
+    { id: 'tools', label: tDetail('toolsTab'), icon: 'W' },
+    { id: 'models', label: tDetail('modelsTab'), icon: 'P' },
+    { id: 'channels', label: tDetail('channelsTab'), icon: 'H' },
+    { id: 'cron', label: tDetail('cronTab'), icon: 'R' },
+    { id: 'soul', label: tDetail('soulTab'), icon: 'S' },
+    { id: 'memory', label: tDetail('memoryTab'), icon: 'M' },
+    { id: 'tasks', label: tDetail('tasksTab'), icon: 'T' },
+    { id: 'config', label: tDetail('configTab'), icon: 'C' },
+    { id: 'activity', label: tDetail('activityTab'), icon: 'A' }
   ]
 
   const handleDelete = async (removeWorkspace: boolean) => {
-    const scope = removeWorkspace ? 'agent and workspace' : 'agent'
-    const confirmed = window.confirm(`Delete ${scope} for "${agentState.name}"? This cannot be undone.`)
+    const scope = removeWorkspace ? tDetail('deleteAgentAndWorkspace') : tDetail('deleteAgentOnly')
+    const confirmed = window.confirm(tDetail('deleteConfirmScoped', { scope, name: agentState.name }))
     if (!confirmed) return
 
     setDeleteBusy(true)
@@ -845,7 +856,7 @@ function AgentDetailModalPhase3({
       await onDelete(agentState.id, removeWorkspace)
       onClose()
     } catch (error: any) {
-      setDeleteError(error?.message || `Failed to delete ${scope}`)
+      setDeleteError(error?.message || tDetail('failedToDeleteScoped', { scope }))
     } finally {
       setDeleteBusy(false)
     }
@@ -874,14 +885,14 @@ function AgentDetailModalPhase3({
                   </span>
                   {agentState.session_key && (
                     <span className="text-[11px] px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
-                      Session
+                      {tDetail('session')}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-sm text-muted-foreground">{agentState.role}</span>
                   <span className="text-xs text-muted-foreground/60">·</span>
-                  <span className="text-xs text-muted-foreground/60">seen {formatLastSeen(agentState.last_seen)}</span>
+                  <span className="text-xs text-muted-foreground/60">{tDetail('seenAt', { time: formatLastSeen(agentState.last_seen) })}</span>
                 </div>
               </div>
             </div>
@@ -891,7 +902,7 @@ function AgentDetailModalPhase3({
                   variant="ghost"
                   size="icon-sm"
                   className="text-muted-foreground hover:text-rose-400"
-                  title="Delete agent"
+                  title={tDetail('delete')}
                   onClick={() => setShowDeleteMenu(prev => !prev)}
                 >
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -910,9 +921,9 @@ function AgentDetailModalPhase3({
                           <svg className="w-3 h-3 animate-spin" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="8" />
                           </svg>
-                          Deleting...
+                          {tDetail('deleting')}
                         </span>
-                      ) : 'Delete agent'}
+                      ) : tDetail('deleteAgentOnly')}
                     </button>
                     <button
                       onClick={() => handleDelete(true)}
@@ -924,16 +935,16 @@ function AgentDetailModalPhase3({
                           <svg className="w-3 h-3 animate-spin" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="8" />
                           </svg>
-                          Deleting...
+                          {tDetail('deleting')}
                         </span>
-                      ) : 'Delete agent + workspace'}
+                      ) : tDetail('deleteAgentAndWorkspace')}
                     </button>
                   </div>
                 )}
               </div>
               <Button
                 onClick={onClose}
-                aria-label="Close agent details"
+                aria-label={tDetail('closeAgentDetails')}
                 variant="ghost"
                 size="icon-sm"
                 className="text-muted-foreground hover:text-foreground"
@@ -1058,6 +1069,7 @@ function QuickSpawnModal({
   onClose: () => void
   onSpawned: () => void
 }) {
+  const t = useTranslations('agentSquadPhase3')
   const [spawnData, setSpawnData] = useState({
     task: '',
     model: 'sonnet',
@@ -1078,7 +1090,7 @@ function QuickSpawnModal({
 
   const handleSpawn = async () => {
     if (!spawnData.task.trim()) {
-      alert('Please enter a task description')
+      alert(t('quickSpawn.errorTaskRequired'))
       return
     }
 
@@ -1104,11 +1116,11 @@ function QuickSpawnModal({
           onClose()
         }, 2000)
       } else {
-        alert(result.error || 'Failed to spawn agent')
+        alert(result.error || t('quickSpawn.errorSpawnFailed'))
       }
     } catch (error) {
       log.error('Spawn failed:', error)
-      alert('Network error occurred')
+      alert(t('quickSpawn.errorNetwork'))
     } finally {
       setIsSpawning(false)
     }
@@ -1119,7 +1131,7 @@ function QuickSpawnModal({
       <div className="bg-card border border-border rounded-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-foreground">
-            Quick Spawn for {agent.name}
+            {t('quickSpawn.title', { name: agent.name })}
           </h3>
           <Button onClick={onClose} variant="ghost" size="icon-sm" className="text-2xl">×</Button>
         </div>
@@ -1127,12 +1139,12 @@ function QuickSpawnModal({
         {spawnResult ? (
           <div className="space-y-4">
             <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg text-sm">
-              Agent spawned successfully!
+              {t('quickSpawn.spawnedSuccess')}
             </div>
             <div className="text-sm text-foreground/80">
-              <p><strong>Agent ID:</strong> {spawnResult.agentId}</p>
-              <p><strong>Session:</strong> {spawnResult.sessionId}</p>
-              <p><strong>Model:</strong> {spawnResult.model}</p>
+              <p><strong>{t('quickSpawn.agentId')}:</strong> {spawnResult.agentId}</p>
+              <p><strong>{t('quickSpawn.session')}:</strong> {spawnResult.sessionId}</p>
+              <p><strong>{t('quickSpawn.model')}:</strong> {spawnResult.model}</p>
             </div>
           </div>
         ) : (
@@ -1140,12 +1152,12 @@ function QuickSpawnModal({
             {/* Task Description */}
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-2">
-                Task Description *
+                {t('quickSpawn.taskDescriptionRequired')}
               </label>
               <textarea
                 value={spawnData.task}
                 onChange={(e) => setSpawnData(prev => ({ ...prev, task: e.target.value }))}
-                placeholder={`Delegate a subtask to ${agent.name}...`}
+                placeholder={t('quickSpawn.taskPlaceholder', { name: agent.name })}
                 className="w-full h-24 px-3 py-2 bg-surface-1 border border-border rounded text-foreground placeholder-muted-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 resize-none"
               />
             </div>
@@ -1153,7 +1165,7 @@ function QuickSpawnModal({
             {/* Model Selection */}
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-2">
-                Model
+                {t('quickSpawn.model')}
               </label>
               <select
                 value={spawnData.model}
@@ -1171,7 +1183,7 @@ function QuickSpawnModal({
             {/* Agent Label */}
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-2">
-                Agent Label
+                {t('quickSpawn.agentLabel')}
               </label>
               <input
                 type="text"
@@ -1184,7 +1196,7 @@ function QuickSpawnModal({
             {/* Timeout */}
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-2">
-                Timeout (seconds)
+                {t('quickSpawn.timeoutSeconds')}
               </label>
               <input
                 type="number"
@@ -1203,13 +1215,13 @@ function QuickSpawnModal({
                 disabled={isSpawning || !spawnData.task.trim()}
                 className="flex-1"
               >
-                {isSpawning ? 'Spawning...' : 'Spawn Agent'}
+                {isSpawning ? t('quickSpawn.spawning') : t('quickSpawn.spawnAgent')}
               </Button>
               <Button
                 onClick={onClose}
                 variant="secondary"
               >
-                Cancel
+                {t('quickSpawn.cancel')}
               </Button>
             </div>
           </div>

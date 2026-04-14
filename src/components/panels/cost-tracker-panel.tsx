@@ -220,7 +220,7 @@ export function CostTrackerPanel() {
                     view === v ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                  {v === 'overview' ? t('viewOverview') : v === 'agents' ? t('agents') : v === 'sessions' ? t('sessionView') : t('tasksWithCosts')}
                 </button>
               ))}
             </div>
@@ -228,7 +228,7 @@ export function CostTrackerPanel() {
             <div className="flex space-x-1">
               {(['hour', 'day', 'week', 'month'] as const).map(tf => (
                 <Button key={tf} onClick={() => setTimeframe(tf)} variant={timeframe === tf ? 'default' : 'secondary'} size="sm">
-                  {tf.charAt(0).toUpperCase() + tf.slice(1)}
+                  {tf === 'hour' ? t('timeframeHour') : tf === 'day' ? t('timeframeDay') : tf === 'week' ? t('timeframeWeek') : t('timeframeMonth')}
                 </Button>
               ))}
             </div>
@@ -371,8 +371,8 @@ function OverviewView({
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="time" /><YAxis />
                   <Tooltip /><Legend />
-                  <Line type="monotone" dataKey="tokens" stroke="#8884d8" strokeWidth={2} name="Tokens" />
-                  <Line type="monotone" dataKey="requests" stroke="#82ca9d" strokeWidth={2} name="Requests" />
+                  <Line type="monotone" dataKey="tokens" stroke="#8884d8" strokeWidth={2} name={t('tokens')} />
+                  <Line type="monotone" dataKey="requests" stroke="#82ca9d" strokeWidth={2} name={t('requests')} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -391,7 +391,7 @@ function OverviewView({
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} />
                   <YAxis /><Tooltip formatter={(v, n) => [formatNumber(Number(v)), n]} />
-                  <Bar dataKey="tokens" fill="#8884d8" name="Tokens" />
+                  <Bar dataKey="tokens" fill="#8884d8" name={t('tokens')} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -467,8 +467,8 @@ function OverviewView({
             <p className="text-sm text-muted-foreground">{t('exportDataDesc')}</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => exportData('csv')} disabled={isExporting} size="sm" variant="secondary">{isExporting ? t('exporting') : 'CSV'}</Button>
-            <Button onClick={() => exportData('json')} disabled={isExporting} size="sm" variant="secondary">{isExporting ? t('exporting') : 'JSON'}</Button>
+            <Button onClick={() => exportData('csv')} disabled={isExporting} size="sm" variant="secondary">{isExporting ? t('exporting') : t('exportCsv')}</Button>
+            <Button onClick={() => exportData('json')} disabled={isExporting} size="sm" variant="secondary">{isExporting ? t('exporting') : t('exportJson')}</Button>
           </div>
         </div>
       </div>
@@ -535,7 +535,7 @@ function AgentsView({
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => formatCost(Number(v))} />
-              <Bar dataKey="cost" fill="#0088FE" name="Cost ($)" />
+              <Bar dataKey="cost" fill="#0088FE" name={t('costLabel')} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -556,14 +556,14 @@ function AgentsView({
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="font-medium text-foreground truncate">{agent.agent}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground shrink-0">
-                      {agent.session_count} session{agent.session_count !== 1 ? 's' : ''}
+                      {t('sessionCount', { count: agent.session_count })}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 shrink-0">
-                      {agent.request_count} req{agent.request_count !== 1 ? 's' : ''}
+                      {t('requestCount', { count: agent.request_count })}
                     </span>
                     {agentTasks.length > 0 && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 shrink-0">
-                        {agentTasks.length} task{agentTasks.length !== 1 ? 's' : ''}
+                        {t('taskCount', { count: agentTasks.length })}
                       </span>
                     )}
                   </div>
@@ -598,8 +598,8 @@ function AgentsView({
                     </div>
 
                     <div className="flex gap-2 mb-3">
-                      <Button variant={expandedSection === 'tasks' ? 'default' : 'ghost'} size="sm" onClick={(e) => { e.stopPropagation(); setExpandedSection('tasks') }}>Tasks ({agentTasks.length})</Button>
-                      <Button variant={expandedSection === 'models' ? 'default' : 'ghost'} size="sm" onClick={(e) => { e.stopPropagation(); setExpandedSection('models') }}>Models ({agent.models.length})</Button>
+                      <Button variant={expandedSection === 'tasks' ? 'default' : 'ghost'} size="sm" onClick={(e) => { e.stopPropagation(); setExpandedSection('tasks') }}>{t('tasksTab', { count: agentTasks.length })}</Button>
+                      <Button variant={expandedSection === 'models' ? 'default' : 'ghost'} size="sm" onClick={(e) => { e.stopPropagation(); setExpandedSection('models') }}>{t('modelsTab', { count: agent.models.length })}</Button>
                     </div>
 
                     {expandedSection === 'tasks' && (
@@ -634,9 +634,9 @@ function AgentsView({
                           <div key={m.model} className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground truncate">{getModelDisplayName(m.model)}</span>
                             <div className="flex gap-4 shrink-0">
-                              <span>{formatNumber(m.input_tokens)} in</span>
-                              <span>{formatNumber(m.output_tokens)} out</span>
-                              <span>{m.request_count} reqs</span>
+                              <span>{formatNumber(m.input_tokens)} {t('inShort')}</span>
+                              <span>{formatNumber(m.output_tokens)} {t('outShort')}</span>
+                              <span>{m.request_count} {t('reqs')}</span>
                               <span className="font-medium text-foreground w-16 text-right">{formatCost(m.cost)}</span>
                             </div>
                           </div>
@@ -681,7 +681,7 @@ function SessionsView({
         {(['cost', 'tokens', 'requests', 'recent'] as const).map(s => (
           <button key={s} onClick={() => setSessionSort(s)}
             className={`px-2 py-1 text-xs rounded ${sessionSort === s ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-          >{s.charAt(0).toUpperCase() + s.slice(1)}</button>
+          >{s === 'cost' ? t('attributedCost') : s === 'tokens' ? t('tokens') : s === 'requests' ? t('requests') : t('lastActive')}</button>
         ))}
       </div>
 
@@ -710,7 +710,7 @@ function SessionsView({
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-lg font-bold text-foreground">{formatCost(entry.totalCost)}</div>
-                    <div className="text-xs text-muted-foreground">{formatNumber(entry.totalTokens)} tokens</div>
+                    <div className="text-xs text-muted-foreground">{formatNumber(entry.totalTokens)} {t('tokens')}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-4 text-xs text-muted-foreground border-t border-border/50 pt-2 mt-2">

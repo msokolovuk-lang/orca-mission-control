@@ -547,7 +547,7 @@ export function TaskBoardPanel() {
     }
 
     if (!loading) {
-      setError(`Task #${selectedTaskIdFromUrl} not found in current workspace`)
+      setError(t('taskNotFound', { id: selectedTaskIdFromUrl }))
       setSelectedTask(null)
     }
   }, [loading, selectedTask, selectedTaskIdFromUrl, setSelectedTask, tasks])
@@ -606,12 +606,12 @@ export function TaskBoardPanel() {
       if (newStatus === 'done') {
         const reviewResponse = await fetch(`/api/quality-review?taskId=${draggedTask.id}`)
         if (!reviewResponse.ok) {
-          throw new Error('Unable to verify Aegis approval')
+          throw new Error(t('unableToVerifyAegisApproval'))
         }
         const reviewData = await reviewResponse.json()
         const latest = reviewData.reviews?.find((review: any) => review.reviewer === 'aegis')
         if (!latest || latest.status !== 'approved') {
-          throw new Error('Aegis approval is required before moving to done')
+          throw new Error(t('aegisApprovalRequired'))
         }
       }
 
@@ -632,12 +632,12 @@ export function TaskBoardPanel() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to update task status')
+        throw new Error(data.error || t('failedToUpdateTaskStatus'))
       }
     } catch (err) {
       // Revert optimistic update via Zustand store
       updateTask(draggedTask.id, { status: previousStatus })
-      setError(err instanceof Error ? err.message : 'Failed to update task status')
+      setError(err instanceof Error ? err.message : t('failedToUpdateTaskStatus'))
     } finally {
       setDraggedTask(null)
     }
@@ -654,10 +654,10 @@ export function TaskBoardPanel() {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
     
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
-    return 'just now'
+    if (days > 0) return t('daysAgo', { count: days })
+    if (hours > 0) return t('hoursAgo', { count: hours })
+    if (minutes > 0) return t('minutesAgo', { count: minutes })
+    return t('justNow')
   }
 
   const handleSpawn = async () => {
@@ -785,7 +785,7 @@ export function TaskBoardPanel() {
               onClick={handleGnapSync}
               disabled={gnapSyncing}
               className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
-              title={gnapStatus.lastSync ? `Last sync: ${gnapStatus.lastSync}` : 'Click to sync'}
+              title={gnapStatus.lastSync ? t('lastSyncAt', { time: gnapStatus.lastSync }) : t('clickToSync')}
             >
               GNAP
               {gnapStatus.taskCount != null && (
@@ -1012,7 +1012,7 @@ export function TaskBoardPanel() {
                               rel="noopener noreferrer"
                               className="text-[10px] px-1.5 py-0.5 rounded bg-[#24292e]/30 text-gray-300 hover:text-white font-mono flex items-center gap-1 transition-colors"
                               onClick={(e) => e.stopPropagation()}
-                              title={`GitHub issue #${task.github_issue_number}`}
+                              title={t('githubIssueTitle', { number: task.github_issue_number })}
                             >
                               <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
                               #{task.github_issue_number}
@@ -1029,7 +1029,7 @@ export function TaskBoardPanel() {
                                 'bg-green-500/20 text-green-400'
                               }`}
                               onClick={(e) => e.stopPropagation()}
-                              title={`PR #${task.github_pr_number} (${task.github_pr_state || 'open'})`}
+                              title={t('pullRequestTitle', { number: task.github_pr_number, state: task.github_pr_state || 'open' })}
                             >
                               <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor"><path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"/></svg>
                               PR #{task.github_pr_number}
@@ -1070,7 +1070,7 @@ export function TaskBoardPanel() {
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {task.comment_count != null && task.comment_count > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70" title={`${task.comment_count} comment${task.comment_count !== 1 ? 's' : ''}`}>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70" title={t('commentCount', { count: task.comment_count })}>
                           <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M2 3h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V4a1 1 0 011-1z" />
                           </svg>
@@ -1603,7 +1603,7 @@ function TaskDetailModal({
                 </div>
                 {task.due_date && (
                   <div className="space-y-0.5">
-                    <span className="text-muted-foreground/60 uppercase tracking-wider text-[10px]">Due</span>
+                    <span className="text-muted-foreground/60 uppercase tracking-wider text-[10px]">{t('due')}</span>
                     <div className="text-foreground">{new Date(task.due_date * 1000).toLocaleDateString()}</div>
                   </div>
                 )}
@@ -1612,7 +1612,7 @@ function TaskDetailModal({
               {/* GitHub section */}
               {(task.github_issue_number || task.github_branch || task.github_pr_number) && (
                 <div className="pt-3 border-t border-border/30 space-y-2">
-                  <span className="text-muted-foreground/60 uppercase tracking-wider text-[10px]">GitHub</span>
+                  <span className="text-muted-foreground/60 uppercase tracking-wider text-[10px]">{t('github')}</span>
                   <div className="flex flex-wrap gap-2">
                     {task.github_issue_number && task.github_repo && (
                       <a
@@ -1708,7 +1708,7 @@ function TaskDetailModal({
                   rows={3}
                   mentionTargets={mentionTargets}
                 />
-                <p className="text-[11px] text-muted-foreground mt-1">Use <span className="font-mono">@</span> to mention users and agents.</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{t('mentionHint')}</p>
               </div>
               <div className="flex justify-end">
                 <Button type="submit">
@@ -1717,10 +1717,10 @@ function TaskDetailModal({
               </div>
             </form>
 
-            <div className="mt-5 bg-blue-500/5 border border-blue-500/15 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-              <div className="font-medium text-blue-300">How notifications work</div>
-              <div><strong className="text-foreground">Comments</strong> are persisted on the task and notify all subscribers. Subscribers are auto-added when they: create the task, are assigned to it, comment on it, or are @mentioned.</div>
-              <div><strong className="text-foreground">Broadcasts</strong> send a one-time notification to all current subscribers without creating a comment record.</div>
+              <div className="mt-5 bg-blue-500/5 border border-blue-500/15 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+              <div className="font-medium text-blue-300">{t('notificationsHowItWorks')}</div>
+              <div><strong className="text-foreground">{t('commentsLabel')}</strong> {t('commentsHelp')}</div>
+              <div><strong className="text-foreground">{t('broadcastsLabel')}</strong> {t('broadcastsHelp')}</div>
             </div>
 
             <div className="mt-6 border-t border-border pt-4">
@@ -1782,8 +1782,8 @@ function TaskDetailModal({
                     onChange={(e) => setReviewStatus(e.target.value as 'approved' | 'rejected')}
                     className="bg-surface-1 text-foreground border border-border rounded-md px-2 py-1 text-xs"
                   >
-                    <option value="approved">approved</option>
-                    <option value="rejected">rejected</option>
+                    <option value="approved">{t('approved')}</option>
+                    <option value="rejected">{t('rejected')}</option>
                   </select>
                   <input
                     type="text"
@@ -1801,7 +1801,7 @@ function TaskDetailModal({
           )}
 
           {activeTab === 'session' && task.metadata?.dispatch_session_id && (
-            <div id="tabpanel-session" role="tabpanel" aria-label="Session" className="mt-4">
+            <div id="tabpanel-session" role="tabpanel" aria-label={t('tabSession')} className="mt-4">
               <TaskSessionFeed
                 sessionId={task.metadata.dispatch_session_id}
                 agentName={task.assigned_to}
@@ -1826,12 +1826,12 @@ function TaskSessionFeed({ sessionId, agentName, isLive }: { sessionId: string; 
   const fetchTranscript = useCallback(async () => {
     try {
       const res = await fetch(`/api/sessions/transcript?kind=claude-code&id=${encodeURIComponent(sessionId)}&limit=100`)
-      if (!res.ok) throw new Error(`Failed to fetch transcript: ${res.status}`)
+      if (!res.ok) throw new Error(t('failedToFetchTranscript', { status: res.status }))
       const data = await res.json()
       setMessages(data.messages || [])
       setError(null)
     } catch (err: any) {
-      setError(err.message || 'Failed to load session transcript')
+      setError(err.message || t('failedToLoadSessionTranscript'))
     } finally {
       setLoading(false)
     }
@@ -2113,7 +2113,7 @@ function CreateTaskModal({
                 rows={3}
                 mentionTargets={mentionTargets}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">Tip: type <span className="font-mono">@</span> for mention autocomplete.</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('mentionAutocompleteTip')}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -2168,21 +2168,21 @@ function CreateTaskModal({
 
             {formData.assigned_to && agentSessions.length > 0 && (
               <div>
-                <label htmlFor="create-target-session" className="block text-sm text-muted-foreground mb-1">Target Session</label>
+                <label htmlFor="create-target-session" className="block text-sm text-muted-foreground mb-1">{t('targetSession')}</label>
                 <select
                   id="create-target-session"
                   value={formData.target_session}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_session: e.target.value }))}
                   className="w-full bg-surface-1 text-foreground border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
                 >
-                  <option value="">New session (default)</option>
+                  <option value="">{t('newSessionDefault')}</option>
                   {agentSessions.map(s => (
                     <option key={s.key} value={s.key}>
                       {s.displayLabel}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-muted-foreground mt-1">Send task to an existing agent session instead of creating a new one.</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{t('sendToExistingSessionHint')}</p>
               </div>
             )}
 
@@ -2194,7 +2194,7 @@ function CreateTaskModal({
                 value={formData.tags}
                 onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                 className="w-full bg-surface-1 text-foreground border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="frontend, urgent, bug"
+                placeholder={t('tagsPlaceholder')}
               />
             </div>
 
@@ -2223,7 +2223,7 @@ function CreateTaskModal({
                     value={scheduleInput}
                     onChange={(e) => handleScheduleChange(e.target.value)}
                     className="w-full bg-surface-1 text-foreground border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    placeholder='e.g. "every morning at 9am" or "every 2 hours"'
+                    placeholder={t('schedulePlaceholder')}
                   />
                   {parsedSchedule && (
                     <p className="text-xs text-cyan-400 mt-1">
@@ -2231,7 +2231,7 @@ function CreateTaskModal({
                     </p>
                   )}
                   {scheduleError && (
-                    <p className="text-xs text-red-400 mt-1">{scheduleError}. Try: &quot;daily at 9am&quot;, &quot;every 2 hours&quot;, &quot;weekly on monday&quot;</p>
+                    <p className="text-xs text-red-400 mt-1">{t('scheduleErrorWithExamples', { error: scheduleError })}</p>
                   )}
                 </div>
               )}
@@ -2349,7 +2349,7 @@ function EditTaskModal({
                 rows={3}
                 mentionTargets={mentionTargets}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">Tip: type <span className="font-mono">@</span> for mention autocomplete.</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('mentionAutocompleteTip')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -2421,21 +2421,21 @@ function EditTaskModal({
 
             {formData.assigned_to && agentSessions.length > 0 && (
               <div>
-                <label htmlFor="edit-target-session" className="block text-sm text-muted-foreground mb-1">Target Session</label>
+                <label htmlFor="edit-target-session" className="block text-sm text-muted-foreground mb-1">{t('targetSession')}</label>
                 <select
                   id="edit-target-session"
                   value={formData.target_session}
                   onChange={(e) => setFormData(prev => ({ ...prev, target_session: e.target.value }))}
                   className="w-full bg-surface-1 text-foreground border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
                 >
-                  <option value="">New session (default)</option>
+                  <option value="">{t('newSessionDefault')}</option>
                   {agentSessions.map(s => (
                     <option key={s.key} value={s.key}>
                       {s.displayLabel}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-muted-foreground mt-1">Send task to an existing agent session instead of creating a new one.</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{t('sendToExistingSessionHint')}</p>
               </div>
             )}
 
@@ -2447,7 +2447,7 @@ function EditTaskModal({
                 value={formData.tags}
                 onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                 className="w-full bg-surface-1 text-foreground border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                placeholder="frontend, urgent, bug"
+                placeholder={t('tagsPlaceholder')}
               />
             </div>
           </div>

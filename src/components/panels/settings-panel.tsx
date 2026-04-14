@@ -73,13 +73,13 @@ function parseCoordinatorTargetAgents(rawAgents: any[]): CoordinatorTargetAgent[
 }
 
 const categoryLabels: Record<string, { label: string; icon: string; description: string }> = {
-  general: { label: 'General', icon: '⚙', description: 'Core Mission Control settings' },
-  security: { label: 'Security', icon: '🔑', description: 'API key management and security settings' },
-  retention: { label: 'Data Retention', icon: '🗄', description: 'How long data is kept before cleanup' },
-  chat: { label: 'Chat', icon: '💬', description: 'Coordinator routing and chat behavior settings' },
-  gateway: { label: 'Gateway', icon: '🔌', description: 'OpenClaw gateway connection settings' },
-  profiles: { label: 'Security Profiles', icon: 'shield', description: 'Hook profile controls security scanning strictness' },
-  custom: { label: 'Custom', icon: '🔧', description: 'User-defined settings' },
+  general: { label: 'general', icon: '⚙', description: 'coreSettingsDescription' },
+  security: { label: 'security', icon: '🔑', description: 'apiSecurityDescription' },
+  retention: { label: 'dataRetention', icon: '🗄', description: 'retentionDescription' },
+  chat: { label: 'chatSettings', icon: '💬', description: 'chatBehaviorDescription' },
+  gateway: { label: 'gatewaySettings', icon: '🔌', description: 'gatewayConnectionDescription' },
+  profiles: { label: 'securityProfiles', icon: 'shield', description: 'hookProfileDescription' },
+  custom: { label: 'custom', icon: '🔧', description: 'customSettingsDescription' },
 }
 
 const categoryOrder = ['general', 'security', 'profiles', 'retention', 'chat', 'gateway', 'custom']
@@ -178,12 +178,12 @@ export function SettingsPanel() {
         return
       }
       if (res.status === 403) {
-        setError('Admin access required')
+        setError(t('adminAccessRequired'))
         return
       }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error || 'Failed to load settings')
+        setError(data.error || t('failedToLoadSettings'))
         return
       }
       const data = await res.json()
@@ -232,7 +232,7 @@ export function SettingsPanel() {
         // non-critical
       }
     } catch {
-      setError('Failed to load settings')
+      setError(t('failedToLoadSettings'))
     } finally {
       setLoading(false)
     }
@@ -268,7 +268,7 @@ export function SettingsPanel() {
         showFeedback(false, data.error || 'Failed to rotate key')
       }
     } catch {
-      showFeedback(false, 'Network error')
+      showFeedback(false, t('networkError'))
     } finally {
       setRotating(false)
     }
@@ -332,7 +332,7 @@ export function SettingsPanel() {
         showFeedback(false, data.error || 'Failed to save')
       }
     } catch {
-      showFeedback(false, 'Network error')
+      showFeedback(false, t('networkError'))
     } finally {
       setSaving(false)
     }
@@ -354,7 +354,7 @@ export function SettingsPanel() {
         showFeedback(false, data.error || 'Failed to reset')
       }
     } catch {
-      showFeedback(false, 'Network error')
+      showFeedback(false, t('networkError'))
     }
   }
 
@@ -363,7 +363,7 @@ export function SettingsPanel() {
   }
 
   if (loading) {
-    return <Loader variant="panel" label="Loading settings" />
+    return <Loader variant="panel" label={t('loadingSettings')} />
   }
 
   if (error) {
@@ -469,7 +469,7 @@ export function SettingsPanel() {
                     showFeedback(false, data.error || 'MC backup failed')
                   }
                 } catch {
-                  showFeedback(false, 'Network error')
+                  showFeedback(false, t('networkError'))
                 } finally {
                   setMcBackupRunning(false)
                 }
@@ -493,7 +493,7 @@ export function SettingsPanel() {
                     showFeedback(false, data.error || 'Gateway backup failed')
                   }
                 } catch {
-                  showFeedback(false, 'Network error')
+                  showFeedback(false, t('networkError'))
                 } finally {
                   setGwBackupRunning(false)
                 }
@@ -538,7 +538,7 @@ export function SettingsPanel() {
                   : ''
               }`}
             >
-              {meta.label}
+              {t(meta.label)}
               {changedCount > 0 && (
                 <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-2xs rounded-full bg-primary text-primary-foreground">
                   {changedCount}
@@ -556,7 +556,7 @@ export function SettingsPanel() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">API Key</span>
+                  <span className="text-sm font-medium text-foreground">{t('apiKeyLabel')}</span>
                   {apiKeyInfo?.source && (
                     <span className="text-2xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                       {apiKeyInfo.source}
@@ -609,7 +609,7 @@ export function SettingsPanel() {
                     size="sm"
                     className="bg-amber-600 hover:bg-amber-700"
                   >
-                    {rotating ? 'Rotating...' : 'Confirm Rotate'}
+                    {rotating ? t('rotating') : t('confirmRotate')}
                   </Button>
                   <Button
                     onClick={() => setRotateConfirm(false)}
@@ -638,7 +638,7 @@ export function SettingsPanel() {
                     size="sm"
                     className="shrink-0"
                   >
-                    {keyCopied ? 'Copied!' : 'Copy'}
+                    {keyCopied ? t('copied') : t('copy')}
                   </Button>
                 </div>
                 <div className="mt-2">
@@ -661,15 +661,15 @@ export function SettingsPanel() {
       {activeCategory === 'profiles' && (
         <div className="space-y-3">
           <div className="bg-card border border-border rounded-lg p-4">
-            <h3 className="text-sm font-medium text-foreground mb-1">Hook Profile</h3>
+            <h3 className="text-sm font-medium text-foreground mb-1">{t('hookProfile')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
               Controls how aggressively security hooks scan tool calls and agent outputs.
             </p>
             <div className="space-y-2">
               {([
-                { value: 'minimal', label: 'Minimal', desc: 'Basic safety checks only. Best for trusted environments with low risk tolerance overhead.' },
-                { value: 'standard', label: 'Standard', desc: 'Balanced scanning for secrets, injections, and suspicious patterns. Recommended for most deployments.' },
-                { value: 'strict', label: 'Strict', desc: 'Full depth scanning with aggressive blocking. May increase latency. Best for sensitive or compliance-driven environments.' },
+                { value: 'minimal', label: t('profileMinimal'), desc: t('profileMinimalDesc') },
+                { value: 'standard', label: t('profileStandard'), desc: t('profileStandardDesc') },
+                { value: 'strict', label: t('profileStrict'), desc: t('profileStrictDesc') },
               ] as const).map(profile => (
                 <button
                   key={profile.value}
@@ -685,10 +685,10 @@ export function SettingsPanel() {
                       if (res.ok) {
                         showFeedback(true, `Hook profile set to ${profile.label}`)
                       } else {
-                        showFeedback(false, 'Failed to save hook profile')
+                        showFeedback(false, t('failedToSaveHookProfile'))
                       }
                     } catch {
-                      showFeedback(false, 'Network error')
+                      showFeedback(false, t('networkError'))
                     } finally {
                       setHookProfileSaving(false)
                     }
@@ -732,9 +732,9 @@ export function SettingsPanel() {
           const isNumeric = /^\d+$/.test(setting.value)
           const coordinatorTargetOptions = setting.key === 'chat.coordinator_target_agent'
             ? [
-                { label: 'Auto (default/main-session fallback)', value: '' },
+                { label: t('coordinatorAutoFallback'), value: '' },
                 ...coordinatorTargetAgents.map(agent => ({
-                  label: `${agent.name}${agent.isDefault ? ' (default)' : ''} — ${agent.openclawId}`,
+                  label: `${agent.name}${agent.isDefault ? ` (${t('defaultLower')})` : ''} — ${agent.openclawId}`,
                   value: agent.openclawId,
                 })),
               ]
@@ -757,10 +757,10 @@ export function SettingsPanel() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{formatLabel(shortKey)}</span>
                     {setting.is_default && (
-                      <span className="text-2xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">default</span>
+                      <span className="text-2xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{t('defaultLower')}</span>
                     )}
                     {isChanged && (
-                      <span className="text-2xs px-1.5 py-0.5 rounded bg-primary/15 text-primary">modified</span>
+                      <span className="text-2xs px-1.5 py-0.5 rounded bg-primary/15 text-primary">{t('modified')}</span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{setting.description}</p>
@@ -779,7 +779,7 @@ export function SettingsPanel() {
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                         {currentValue && !dropdownOptions.some(opt => opt.value === currentValue) && (
-                          <option value={currentValue}>Custom: {currentValue}</option>
+                          <option value={currentValue}>{t('customPrefix', { value: currentValue })}</option>
                         )}
                       </select>
                     ) : isBooleanish ? (
@@ -812,7 +812,7 @@ export function SettingsPanel() {
                     {!setting.is_default && (
                       <Button
                         onClick={() => handleReset(setting.key)}
-                        title="Reset to default"
+                        title={t('resetToDefault')}
                         variant="ghost"
                         size="icon-xs"
                         className="w-6 h-6"
@@ -832,7 +832,10 @@ export function SettingsPanel() {
 
               {setting.updated_by && setting.updated_at && (
                 <div className="text-2xs text-muted-foreground/50 mt-2">
-                  Last updated by {setting.updated_by} on {new Date(setting.updated_at * 1000).toLocaleDateString()}
+                  {t('lastUpdatedByOn', {
+                    user: setting.updated_by,
+                    date: new Date(setting.updated_at * 1000).toLocaleDateString(),
+                  })}
                 </div>
               )}
             </div>
@@ -874,6 +877,7 @@ export function SettingsPanel() {
 }
 
 function InterfaceModeSelector() {
+  const ts = useTranslations('settings')
   const { interfaceMode, setInterfaceMode } = useMissionControl()
   const [saving, setSaving] = useState(false)
   const navigateToPanel = useNavigateToPanel()
@@ -901,14 +905,14 @@ function InterfaceModeSelector() {
 
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      <h3 className="text-sm font-medium text-foreground mb-1">Interface Mode</h3>
+      <h3 className="text-sm font-medium text-foreground mb-1">{ts('interfaceModeTitle')}</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Controls how many panels appear in the sidebar.
+        {ts('interfaceModeDescription')}
       </p>
       <div className="space-y-2">
         {([
-          { value: 'essential' as const, label: 'Essential', desc: 'Focused view with core panels only — Agents, Tasks, Chat, Memory, Activity, Cost tracker, Notifications, Settings.' },
-          { value: 'full' as const, label: 'Full', desc: 'All panels and advanced features including Security, Users, Audit, and more.' },
+          { value: 'essential' as const, label: ts('interfaceModeEssential'), desc: ts('interfaceModeEssentialDesc') },
+          { value: 'full' as const, label: ts('interfaceModeFull'), desc: ts('interfaceModeFullDesc') },
         ]).map(option => (
           <button
             key={option.value}
@@ -934,7 +938,7 @@ function InterfaceModeSelector() {
           </button>
         ))}
       </div>
-      <p className="text-2xs text-muted-foreground/60 mt-2">You can also switch from the sidebar footer.</p>
+      <p className="text-2xs text-muted-foreground/60 mt-2">{ts('interfaceModeFooterHint')}</p>
     </div>
   )
 }
@@ -966,6 +970,7 @@ function formatLabel(key: string): string {
 // ---------------------------------------------------------------------------
 
 function AccountOAuthSection() {
+  const ts = useTranslations('settings')
   const { currentUser } = useMissionControl()
   const [disconnecting, setDisconnecting] = useState(false)
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null)
@@ -980,14 +985,14 @@ function AccountOAuthSection() {
       const res = await fetch('/api/auth/google/disconnect', { method: 'POST' })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        setFeedback({ ok: true, text: 'Google account disconnected. You can now sign in with username and password.' })
+        setFeedback({ ok: true, text: ts('googleDisconnected') })
         // Reload after a short delay so the user sees the feedback
         setTimeout(() => window.location.reload(), 1500)
       } else {
-        setFeedback({ ok: false, text: data.error || 'Failed to disconnect' })
+        setFeedback({ ok: false, text: data.error || ts('failedToDisconnectGoogle') })
       }
     } catch {
-      setFeedback({ ok: false, text: 'Network error' })
+      setFeedback({ ok: false, text: ts('networkError') })
     } finally {
       setDisconnecting(false)
     }
@@ -996,7 +1001,7 @@ function AccountOAuthSection() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 pt-2">
-        <h3 className="text-sm font-medium text-foreground">Account</h3>
+        <h3 className="text-sm font-medium text-foreground">{ts('account')}</h3>
       </div>
 
       <div className="bg-card border border-border rounded-lg p-4">
@@ -1018,15 +1023,15 @@ function AccountOAuthSection() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">Google</span>
                 {isGoogleConnected ? (
-                  <span className="text-2xs px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">Connected</span>
+                  <span className="text-2xs px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">{ts('connected')}</span>
                 ) : (
-                  <span className="text-2xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Not connected</span>
+                  <span className="text-2xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{ts('notConnected')}</span>
                 )}
               </div>
               {isGoogleConnected && currentUser.email ? (
                 <p className="text-xs text-muted-foreground mt-0.5">{currentUser.email}</p>
               ) : (
-                <p className="text-xs text-muted-foreground mt-0.5">Link your Google account for OAuth sign-in</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{ts('linkGoogleForOauth')}</p>
               )}
             </div>
           </div>
@@ -1039,7 +1044,7 @@ function AccountOAuthSection() {
               size="sm"
               className="text-xs hover:text-destructive hover:border-destructive/50"
             >
-              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+              {disconnecting ? ts('disconnecting') : ts('disconnect')}
             </Button>
           )}
         </div>

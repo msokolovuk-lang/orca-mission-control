@@ -228,7 +228,7 @@ export function NavRail() {
       {/* Desktop: Grouped sidebar */}
       <nav
         role="navigation"
-        aria-label="Main navigation"
+        aria-label={tn('mainNavigation')}
         className={`hidden md:flex flex-col bg-gradient-to-b from-card to-background border-r border-border shrink-0 transition-all duration-200 ease-in-out ${
           sidebarExpanded ? 'w-[220px]' : 'w-14'
         }`}
@@ -239,7 +239,7 @@ export function NavRail() {
           {sidebarExpanded && (
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-baseline gap-2 truncate">
-                <span className="text-sm font-semibold text-foreground truncate">ИИ-Ателье</span>
+                <span className="text-sm font-semibold text-foreground truncate">{tn('brandTitle')}</span>
                 <span className="text-2xs text-muted-foreground font-mono-tight shrink-0">v{APP_VERSION}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -249,7 +249,7 @@ export function NavRail() {
                   }`}
                 />
                 <span>
-                  {orcaStatus.loading ? 'Orca …' : (orcaStatus.connected ? 'Orca' : 'Orca offline')}
+                  {orcaStatus.loading ? tn('orcaLoading') : (orcaStatus.connected ? tn('orcaOnline') : tn('orcaOffline'))}
                 </span>
               </div>
             </div>
@@ -423,7 +423,7 @@ export function NavRail() {
                 <span className="text-2xs font-semibold text-foreground group-hover:text-primary transition-colors">xint</span>
                 <span className="text-[9px] px-1 py-px rounded bg-primary/15 text-primary font-mono">CLI</span>
               </div>
-              <p className="text-[10px] text-muted-foreground/70 leading-snug">X power tools for agents.</p>
+              <p className="text-[10px] text-muted-foreground/70 leading-snug">{tn('promoXint')}</p>
             </a>
             <a
               href="https://builderz.dev"
@@ -435,7 +435,7 @@ export function NavRail() {
                 <span className="text-2xs font-bold text-foreground group-hover:text-void-cyan transition-colors">builderz</span>
                 <span className="text-[9px] px-1 py-px rounded bg-void-cyan/15 text-void-cyan">.dev</span>
               </div>
-              <p className="text-[10px] text-muted-foreground/70 leading-snug">AI-native dev shop · Solana experts.</p>
+              <p className="text-[10px] text-muted-foreground/70 leading-snug">{tn('promoBuilderz')}</p>
             </a>
           </div>
         )}
@@ -444,7 +444,7 @@ export function NavRail() {
         {sidebarExpanded && (
           <div className="px-3 pb-1">
             <p className="text-[10px] text-muted-foreground/30 text-center">
-              Built with care by{' '}
+              {tn('builtWithCareBy')}{' '}
               <a href="https://x.com/nyk_builderz" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-primary transition-colors">
                 nyk
               </a>
@@ -616,6 +616,7 @@ function MobileBottomSheet({ open, onClose, activeTab, navigateToPanel, groups }
   navigateToPanel: (tab: string) => void
   groups: NavGroup[]
 }) {
+  const tn = useTranslations('nav')
   // Track mount state for animation
   const [visible, setVisible] = useState(false)
 
@@ -668,7 +669,7 @@ function MobileBottomSheet({ open, onClose, activeTab, navigateToPanel, groups }
               {/* Group header */}
               <div className="px-1 pt-1 pb-2">
                 <span className="text-[10px] tracking-wider text-muted-foreground/60 font-semibold">
-                  {group.label || 'CORE'}
+                  {group.label || tn('group.core')}
                 </span>
               </div>
 
@@ -714,6 +715,7 @@ function OrgRow({ label, initial, active, colorClass, onClick, isActiveOrg, proj
   onSwitchProject: (project: import('@/store').Project | null) => void
   onNewProject: () => void
 }) {
+  const tn = useTranslations('nav')
   const tcs = useTranslations('contextSwitcher')
   return (
     <div>
@@ -770,7 +772,7 @@ function OrgRow({ label, initial, active, colorClass, onClick, isActiveOrg, proj
                   <span className="text-[9px] bg-white/10 px-1 rounded text-muted-foreground/50">{project.task_count}</span>
                 )}
                 {project.deadline && project.deadline < Math.floor(Date.now() / 1000) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" title="Overdue" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" title={tn('overdue')} />
                 )}
                 <span className="text-muted-foreground/30 text-[10px]">{project.ticket_prefix}</span>
               </div>
@@ -786,7 +788,7 @@ function OrgRow({ label, initial, active, colorClass, onClick, isActiveOrg, proj
                 <path d="M8 3v10M3 8h10" />
               </svg>
             </div>
-            New project...
+            {tcs('newProject')}
           </Button>
         </div>
       )}
@@ -828,7 +830,7 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
-  const userName = currentUser?.display_name || currentUser?.username || 'User'
+  const userName = currentUser?.display_name || currentUser?.username || tcs('user')
   const initials = userName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const tenantName = activeTenant?.display_name || defaultOrgName
   const projectName = activeProject?.name
@@ -1077,7 +1079,7 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                     <Button
                       variant="ghost"
                       disabled
-                      title="Temporarily disabled — not functional yet"
+                      title={tcs('temporarilyDisabled')}
                       className="w-full flex items-center gap-2 px-2 py-1.5 h-auto rounded-md text-xs justify-start text-muted-foreground/40 cursor-not-allowed"
                     >
                       <div className="w-5 h-5 flex items-center justify-center text-muted-foreground/40">
@@ -1122,7 +1124,7 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                                 onChange={(e) => setCreateForm(f => ({ ...f, install_openclaw: e.target.checked }))}
                                 className="w-3 h-3 rounded accent-primary"
                               />
-                              <span className="text-[10px] text-foreground">openclaw</span>
+                              <span className="text-[10px] text-foreground">{tcs('openclaw')}</span>
                             </label>
                             <label className={`flex items-center gap-1 ${createForm.install_openclaw ? 'opacity-50' : ''} cursor-pointer`}>
                               <input
@@ -1132,8 +1134,8 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                                 disabled={createForm.install_openclaw}
                                 className="w-3 h-3 rounded accent-primary"
                               />
-                              <span className="text-[10px] text-foreground">claude</span>
-                              {createForm.install_openclaw && <span className="text-[9px] text-muted-foreground/50 italic">included</span>}
+                              <span className="text-[10px] text-foreground">{tcs('claude')}</span>
+                              {createForm.install_openclaw && <span className="text-[9px] text-muted-foreground/50 italic">{tcs('included')}</span>}
                             </label>
                             <label className={`flex items-center gap-1 ${createForm.install_openclaw ? 'opacity-50' : ''} cursor-pointer`}>
                               <input
@@ -1143,8 +1145,8 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                                 disabled={createForm.install_openclaw}
                                 className="w-3 h-3 rounded accent-primary"
                               />
-                              <span className="text-[10px] text-foreground">codex</span>
-                              {createForm.install_openclaw && <span className="text-[9px] text-muted-foreground/50 italic">included</span>}
+                              <span className="text-[10px] text-foreground">{tcs('codex')}</span>
+                              {createForm.install_openclaw && <span className="text-[9px] text-muted-foreground/50 italic">{tcs('included')}</span>}
                             </label>
                           </div>
                         </div>

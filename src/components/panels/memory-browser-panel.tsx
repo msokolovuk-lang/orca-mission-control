@@ -631,7 +631,7 @@ function LinksSidebar({ fileLinks, onNavigate }: { fileLinks: { wikiLinks: unkno
       <div className="p-3 border-b border-border/50">
         <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('outgoing', { count: fileLinks.outgoing.length })}</div>
         {fileLinks.outgoing.length === 0 ? (
-          <div className="text-[11px] font-mono text-muted-foreground/30">none</div>
+          <div className="text-[11px] font-mono text-muted-foreground/30">{t('none')}</div>
         ) : (
           <div className="space-y-0.5">
             {fileLinks.outgoing.map((path, i) => (
@@ -645,7 +645,7 @@ function LinksSidebar({ fileLinks, onNavigate }: { fileLinks: { wikiLinks: unkno
       <div className="p-3 border-b border-border/50">
         <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('backlinks', { count: fileLinks.incoming.length })}</div>
         {fileLinks.incoming.length === 0 ? (
-          <div className="text-[11px] font-mono text-muted-foreground/30">none</div>
+          <div className="text-[11px] font-mono text-muted-foreground/30">{t('none')}</div>
         ) : (
           <div className="space-y-0.5">
             {fileLinks.incoming.map((path, i) => (
@@ -659,7 +659,7 @@ function LinksSidebar({ fileLinks, onNavigate }: { fileLinks: { wikiLinks: unkno
       <div className="p-3">
         <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('wikiLinks', { count: links.length })}</div>
         {links.length === 0 ? (
-          <div className="text-[11px] font-mono text-muted-foreground/30">none</div>
+          <div className="text-[11px] font-mono text-muted-foreground/30">{t('none')}</div>
         ) : (
           <div className="space-y-0.5">
             {links.map((link, i) => (
@@ -737,7 +737,7 @@ function CreateFileModal({ onClose, onCreate }: { onClose: () => void; onCreate:
   const [filePath, setFilePath] = useState('knowledge/')
   const [initialContent, setInitialContent] = useState('')
   const [fileType, setFileType] = useState('md')
-  const templates: Record<string, string> = { md: '# New Document\n\n', json: '{\n  \n}', txt: '', log: '' }
+  const templates: Record<string, string> = { md: t('newDocumentTemplate'), json: '{\n  \n}', txt: '', log: '' }
   const handleCreate = () => {
     if (!fileName.trim()) return
     onCreate(filePath + fileName + '.' + fileType, initialContent)
@@ -764,7 +764,7 @@ function CreateFileModal({ onClose, onCreate }: { onClose: () => void; onCreate:
           </div>
           <div>
             <label className="block text-[11px] font-mono text-muted-foreground mb-1">{t('fileName')}</label>
-            <input type="text" value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="my-file" className="w-full px-2.5 py-1.5 text-xs font-mono bg-[hsl(var(--surface-0))] border border-border/50 rounded text-foreground focus:outline-none focus:border-primary/30" autoFocus />
+            <input type="text" value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder={t('fileNamePlaceholder')} className="w-full px-2.5 py-1.5 text-xs font-mono bg-[hsl(var(--surface-0))] border border-border/50 rounded text-foreground focus:outline-none focus:border-primary/30" autoFocus />
           </div>
           <div>
             <label className="block text-[11px] font-mono text-muted-foreground mb-1">{t('fileType')}</label>

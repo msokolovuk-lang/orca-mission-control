@@ -594,7 +594,7 @@ export function SuperAdminPanel() {
             variant="ghost"
             size="icon-xs"
             onClick={() => setCreateExpanded(false)}
-            aria-label="Close create form"
+            aria-label={t('closeCreateForm')}
             className="text-lg w-6 h-6"
           >
             ×
@@ -606,7 +606,7 @@ export function SuperAdminPanel() {
             </div>
             {gatewayLoadError && (
               <div className="px-3 py-2 rounded-md text-xs border bg-amber-500/10 text-amber-300 border-amber-500/20">
-                Gateway list unavailable: {gatewayLoadError}. Using fallback owner value.
+                {t('gatewayListUnavailable', { error: gatewayLoadError })}
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -728,7 +728,7 @@ export function SuperAdminPanel() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <caption className="sr-only">Tenant list</caption>
+                <caption className="sr-only">{t('tenantListCaption')}</caption>
                 <thead>
                   <tr className="bg-secondary/30 border-b border-border">
                     <th scope="col" className="text-left px-3 py-2 text-xs text-muted-foreground">{t('colTenant')}</th>
@@ -783,7 +783,7 @@ export function SuperAdminPanel() {
                                 size="xs"
                                 onClick={() => setOpenActionMenu((cur) => (cur === menuKey ? null : menuKey))}
                               >
-                                Actions
+                                {t('actions')}
                               </Button>
                               {openActionMenu === menuKey && (
                                 <div className="absolute right-3 top-10 z-20 w-44 rounded-md border border-border bg-card shadow-xl text-left">
@@ -870,7 +870,7 @@ export function SuperAdminPanel() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <caption className="sr-only">Provisioning jobs</caption>
+                <caption className="sr-only">{t('provisioningJobsCaption')}</caption>
                 <thead>
                   <tr className="bg-secondary/30 border-b border-border">
                     <th scope="col" className="text-left px-3 py-2 text-xs text-muted-foreground">{t('colJob')}</th>
@@ -913,7 +913,7 @@ export function SuperAdminPanel() {
                                 size="xs"
                                 onClick={() => setOpenActionMenu((cur) => (cur === menuKey ? null : menuKey))}
                               >
-                                Actions
+                                {t('actions')}
                               </Button>
                               {openActionMenu === menuKey && (
                                 <div className="absolute right-3 top-10 z-20 w-40 rounded-md border border-border bg-card shadow-xl text-left">

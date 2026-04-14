@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { RuntimeSetupModal } from '@/components/onboarding/runtime-setup-modal'
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function AgentRuntimesSection({ showFeedback }: Props) {
+  const t = useTranslations('agentRuntimes')
   const [runtimes, setRuntimes] = useState<RuntimeStatus[]>([])
   const [isDocker, setIsDocker] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -71,10 +73,10 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
           if (data.job) {
             setActiveJobs(prev => ({ ...prev, [data.job.runtime]: data.job }))
             if (data.job.status === 'success') {
-              showFeedback(true, `${data.job.runtime} installed successfully`)
+              showFeedback(true, t('installedSuccessfullyRuntime', { runtime: data.job.runtime }))
               fetchRuntimes()
             } else if (data.job.status === 'failed') {
-              showFeedback(false, `${data.job.runtime} install failed`)
+              showFeedback(false, t('installFailedRuntime', { runtime: data.job.runtime }))
               fetchRuntimes()
             }
           }
@@ -95,7 +97,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
         body: JSON.stringify({ action: 'install', runtime: runtimeId, mode: 'local' }),
       })
       if (!res.ok) {
-        showFeedback(false, 'Failed to start install')
+        showFeedback(false, t('failedToStartInstall'))
         return
       }
       const data = await res.json()
@@ -103,7 +105,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
         setActiveJobs(prev => ({ ...prev, [runtimeId]: data.job }))
       }
     } catch {
-      showFeedback(false, 'Failed to start install')
+      showFeedback(false, t('failedToStartInstall'))
     }
   }
 
@@ -117,9 +119,9 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
       if (!res.ok) return
       const data = await res.json()
       await navigator.clipboard.writeText(data.yaml)
-      showFeedback(true, 'Docker compose snippet copied')
+      showFeedback(true, t('dockerComposeCopied'))
     } catch {
-      showFeedback(false, 'Failed to copy')
+      showFeedback(false, t('failedToCopy'))
     }
   }
 
@@ -132,16 +134,16 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
       })
       if (!res.ok) return
       await fetchRuntimes()
-      showFeedback(true, 'Detection refreshed')
+      showFeedback(true, t('detectionRefreshed'))
     } catch {
-      showFeedback(false, 'Detection failed')
+      showFeedback(false, t('detectionFailed'))
     }
   }
 
   if (loading) {
     return (
       <div className="p-4 rounded-lg border border-border/30 bg-surface-1/20">
-        <h3 className="text-sm font-medium mb-3">Agent Runtimes</h3>
+        <h3 className="text-sm font-medium mb-3">{t('title')}</h3>
         <div className="flex items-center justify-center py-4"><Loader /></div>
       </div>
     )
@@ -149,14 +151,14 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
 
   return (
     <div className="p-4 rounded-lg border border-border/30 bg-surface-1/20">
-      <h3 className="text-sm font-medium mb-1">Agent Runtimes</h3>
+      <h3 className="text-sm font-medium mb-1">{t('title')}</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Install and manage agent runtimes for running AI agents.
+        {t('description')}
       </p>
 
       {isDocker && (
         <div className="mb-3 p-2 rounded border border-void-cyan/20 bg-void-cyan/5 text-xs text-muted-foreground">
-          Running in Docker — install directly or use sidecar services for production.
+          {t('runningInDocker')}
         </div>
       )}
 
@@ -201,7 +203,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-foreground">{rt.name}</p>
-                        <p className="text-2xs text-emerald-400/70">Installing...</p>
+                        <p className="text-2xs text-emerald-400/70">{t('installing')}</p>
                       </div>
                     </div>
                     {job?.output && (
@@ -219,11 +221,11 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
                         <span className="text-sm font-medium">{rt.name}</span>
                         {rt.installed || justInstalled ? (
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                            {rt.version ? `v${rt.version}` : 'Installed'}
+                            {rt.version ? `v${rt.version}` : t('installed')}
                           </span>
                         ) : (
                           <span className="text-2xs px-1.5 py-0.5 rounded-full bg-muted/30 text-muted-foreground border border-border/20">
-                            Not installed
+                            {t('notInstalled')}
                           </span>
                         )}
                         {rt.installed && (
@@ -232,18 +234,18 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : 'bg-muted/20 text-muted-foreground/60 border-border/20'
                           }`}>
-                            {rt.running ? 'Running' : 'Stopped'}
+                            {rt.running ? t('running') : t('stopped')}
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <Button variant="ghost" size="sm" onClick={() => handleDetect(rt.id)} className="text-2xs h-6 px-2">Refresh</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDetect(rt.id)} className="text-2xs h-6 px-2">{t('refresh')}</Button>
                         {!rt.installed && !justInstalled && (
                           <>
-                            <Button variant="ghost" size="sm" onClick={() => handleInstall(rt.id)} className="text-2xs h-6 px-2">Install</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleInstall(rt.id)} className="text-2xs h-6 px-2">{t('install')}</Button>
                             {isDocker && (
-                              <Button variant="ghost" size="sm" onClick={() => handleCopyCompose(rt.id)} className="text-2xs h-6 px-2">Sidecar YAML</Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleCopyCompose(rt.id)} className="text-2xs h-6 px-2">{t('sidecarYaml')}</Button>
                             )}
                           </>
                         )}
@@ -254,7 +256,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
 
                     {rt.installed && rt.authRequired && (
                       <p className={`text-2xs mt-1 ${rt.authenticated ? 'text-emerald-400/70' : 'text-amber-400'}`}>
-                        {rt.authenticated ? 'Authenticated' : rt.authHint}
+                        {rt.authenticated ? t('authenticated') : rt.authHint}
                       </p>
                     )}
 
@@ -263,18 +265,18 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
                         onClick={() => setSetupRuntime(rt.id as 'openclaw' | 'claude' | 'codex')}
                         className="text-2xs mt-1.5 px-2 py-1 rounded border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                       >
-                        Configure {rt.name}
+                        {t('configureRuntime', { name: rt.name })}
                       </button>
                     )}
 
                     {installFailed && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-2xs text-red-400">Install failed: {job?.error || 'Unknown error'}</p>
-                        <Button variant="ghost" size="sm" onClick={() => handleInstall(rt.id)} className="text-2xs h-6 px-2">Retry</Button>
+                        <p className="text-2xs text-red-400">{t('installFailedWithError', { error: job?.error || t('unknownError') })}</p>
+                        <Button variant="ghost" size="sm" onClick={() => handleInstall(rt.id)} className="text-2xs h-6 px-2">{t('retry')}</Button>
                       </div>
                     )}
 
-                    {justInstalled && <p className="text-2xs text-emerald-400 mt-1">Installed successfully</p>}
+                    {justInstalled && <p className="text-2xs text-emerald-400 mt-1">{t('installedSuccessfully')}</p>}
 
                     {job?.output && !isInstalling && (
                       <div className="mt-2">
@@ -282,7 +284,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
                           onClick={() => setExpandedOutput(expandedOutput === rt.id ? null : rt.id)}
                           className="text-2xs text-muted-foreground/50 hover:text-muted-foreground underline"
                         >
-                          {expandedOutput === rt.id ? 'Hide output' : 'Show output'}
+                          {expandedOutput === rt.id ? t('hideOutput') : t('showOutput')}
                         </button>
                         {expandedOutput === rt.id && (
                           <pre className="mt-1 p-2 rounded bg-black/20 text-[10px] font-mono text-muted-foreground/60 max-h-32 overflow-auto whitespace-pre-wrap">
@@ -308,7 +310,7 @@ export function AgentRuntimesSection({ showFeedback }: Props) {
             setSetupRuntime(null)
             fetchRuntimes()
             const names: Record<string, string> = { openclaw: 'OpenClaw', claude: 'Claude Code', codex: 'Codex CLI' }
-            showFeedback(true, `${names[setupRuntime] || setupRuntime} setup complete`)
+            showFeedback(true, t('setupComplete', { name: names[setupRuntime] || setupRuntime }))
           }}
         />
       )}

@@ -93,13 +93,13 @@ export function OrchestrationBar() {
       })
       const data = await res.json()
       if (res.ok) {
-        setCommandResult({ ok: true, text: `Message sent to ${selectedAgent}` })
+        setCommandResult({ ok: true, text: t('messageSentTo', { agent: selectedAgent }) })
         setMessage('')
       } else {
-        setCommandResult({ ok: false, text: data.error || 'Failed to send' })
+        setCommandResult({ ok: false, text: data.error || t('failedToSend') })
       }
     } catch {
-      setCommandResult({ ok: false, text: 'Network error' })
+      setCommandResult({ ok: false, text: t('networkError') })
     } finally {
       setSending(false)
     }
@@ -126,14 +126,14 @@ export function OrchestrationBar() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: template.id })
         })
-        setCommandResult({ ok: true, text: `Spawned "${template.name}"` })
+        setCommandResult({ ok: true, text: t('spawnedTemplate', { name: template.name }) })
         fetchData()
       } else {
         const data = await res.json()
-        setCommandResult({ ok: false, text: data.error || 'Spawn failed' })
+        setCommandResult({ ok: false, text: data.error || t('spawnFailed') })
       }
     } catch {
-      setCommandResult({ ok: false, text: 'Network error' })
+      setCommandResult({ ok: false, text: t('networkError') })
     } finally {
       setSpawning(null)
     }
@@ -270,7 +270,7 @@ export function OrchestrationBar() {
                 <option value="" disabled>{t('noAgentsRegistered')}</option>
               )}
               {agents.map(a => (
-                <option key={a.name} value={a.name} disabled={!a.session_key} title={!a.session_key ? 'Agent has no active session' : undefined}>
+                <option key={a.name} value={a.name} disabled={!a.session_key} title={!a.session_key ? t('agentNoActiveSession') : undefined}>
                   {a.name} ({a.status}){!a.session_key ? ` — ${t('noSessionSuffix')}` : ''}
                 </option>
               ))}
@@ -312,7 +312,11 @@ export function OrchestrationBar() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">
-                    {filteredTemplates.length}{filterTag ? ` / ${templates.length}` : ''} templates
+                    {t('templatesCount', {
+                      shown: filteredTemplates.length,
+                      total: templates.length,
+                      filtered: filterTag ? 1 : 0,
+                    })}
                   </span>
                   {allTags.length > 0 && (
                     <div className="flex items-center gap-1">
@@ -372,9 +376,9 @@ export function OrchestrationBar() {
                       onChange={(e) => setTemplateForm(f => ({ ...f, model: e.target.value }))}
                       className="h-8 px-2 rounded-md bg-secondary border border-border text-sm text-foreground"
                     >
-                      <option value="haiku">Haiku</option>
-                      <option value="sonnet">Sonnet</option>
-                      <option value="opus">Opus</option>
+                      <option value="haiku">{t('modelHaiku')}</option>
+                      <option value="sonnet">{t('modelSonnet')}</option>
+                      <option value="opus">{t('modelOpus')}</option>
                     </select>
                   </div>
                   <input
@@ -404,7 +408,7 @@ export function OrchestrationBar() {
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag() } }}
                         onBlur={addTag}
-                        placeholder={templateForm.tags.length === 0 ? 'Tags (comma-separated)' : 'Add tag...'}
+                        placeholder={templateForm.tags.length === 0 ? t('tagsCommaSeparated') : t('addTag')}
                         className="h-6 px-1 bg-transparent border-none text-xs text-foreground placeholder:text-muted-foreground outline-none min-w-[80px] flex-1"
                       />
                     </div>
@@ -417,12 +421,12 @@ export function OrchestrationBar() {
                         onChange={(e) => setTemplateForm(f => ({ ...f, timeout_seconds: parseInt(e.target.value) }))}
                         className="h-6 px-1 rounded bg-secondary border border-border text-2xs text-foreground"
                       >
-                        <option value={60}>1 min</option>
-                        <option value={120}>2 min</option>
-                        <option value={300}>5 min</option>
-                        <option value={600}>10 min</option>
-                        <option value={1800}>30 min</option>
-                        <option value={3600}>1 hour</option>
+                        <option value={60}>{t('timeout1m')}</option>
+                        <option value={120}>{t('timeout2m')}</option>
+                        <option value={300}>{t('timeout5m')}</option>
+                        <option value={600}>{t('timeout10m')}</option>
+                        <option value={1800}>{t('timeout30m')}</option>
+                        <option value={3600}>{t('timeout1h')}</option>
                       </select>
                     </div>
                     <Button
@@ -463,15 +467,15 @@ export function OrchestrationBar() {
                           onClick={() => executeTemplate(tmpl)}
                           disabled={spawning === tmpl.id}
                           size="xs"
-                          title="Run"
+                          title={t('run')}
                         >
-                          {spawning === tmpl.id ? '...' : 'Run'}
+                          {spawning === tmpl.id ? '...' : t('run')}
                         </Button>
                         <Button
                           onClick={() => startEdit(tmpl)}
                           variant="secondary"
                           size="icon-xs"
-                          title="Edit"
+                          title={t('edit')}
                         >
                           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                             <path d="M11.5 1.5l3 3-9 9H2.5v-3z" strokeLinecap="round" strokeLinejoin="round" />
@@ -481,7 +485,7 @@ export function OrchestrationBar() {
                           onClick={() => duplicateTemplate(tmpl)}
                           variant="secondary"
                           size="icon-xs"
-                          title="Duplicate"
+                          title={t('duplicate')}
                         >
                           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                             <rect x="5" y="5" width="9" height="9" rx="1" strokeLinecap="round" strokeLinejoin="round" />
@@ -492,7 +496,7 @@ export function OrchestrationBar() {
                           onClick={() => deleteTemplate(tmpl.id)}
                           variant="destructive"
                           size="icon-xs"
-                          title="Delete"
+                          title={t('delete')}
                         >
                           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                             <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
