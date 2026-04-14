@@ -9,6 +9,8 @@ import { logger } from '@/lib/logger'
 import { validateSchema, extractWikiLinks } from '@/lib/memory-utils'
 import { MEMORY_PATH, MEMORY_ALLOWED_PREFIXES, isPathAllowed, resolveSafeMemoryPath } from '@/lib/memory-path'
 import { searchMemory, indexFile, removeFromIndex } from '@/lib/memory-search'
+import { listNotes, listVaults, readNote } from '@/lib/orca/brain'
+import { brainToMcTree } from '@/lib/orca/memory-mapping'
 
 // Ensure memory directory exists on startup
 if (MEMORY_PATH && !existsSync(MEMORY_PATH)) {
@@ -22,6 +24,123 @@ interface MemoryFile {
   size?: number
   modified?: number
   children?: MemoryFile[]
+}
+
+function isOrcaBrainConfigured(): boolean {
+  return Boolean(process.env.ORCA_GATEWAY_URL?.trim() && process.env.ORCA_GATEWAY_TOKEN?.trim())
+}
+
+function getErrorDetail(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return 'Unknown Orca Brain error'
+}
+
+function orcaBrainUnavailable(error: unknown): NextResponse {
+  return NextResponse.json(
+    { error: 'orca-brain-unavailable', detail: getErrorDetail(error) },
+    { status: 502 },
+  )
+}
+
+function normalizeNodePath(input: string): string {
+  return input.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '')
+}
+
+function limitTreeDepth(files: MemoryFile[], maxDepth: number): MemoryFile[] {
+  if (!Number.isFinite(maxDepth)) return files
+  if (maxDepth <= 0) {
+    return files.map((file) => (file.type === 'directory' ? { ...file, children: undefined } : file))
+  }
+  return files.map((file) => {
+    if (file.type !== 'directory' || !file.children) return file
+    return { ...file, children: limitTreeDepth(file.children, maxDepth - 1) }
+  })
+}
+
+function findDirectoryNode(files: MemoryFile[], targetPath: string): MemoryFile | null {
+  const normalizedTarget = normalizeNodePath(targetPath)
+  for (const file of files) {
+    if (normalizeNodePath(file.path) === normalizedTarget) return file
+    if (!file.children?.length) continue
+    const nested = findDirectoryNode(file.children, normalizedTarget)
+    if (nested) return nested
+  }
+  return null
+}
+
+function stringifyFrontmatterValue(value: unknown, indent: string): string[] {
+  const nextIndent = `${indent}  `
+  if (Array.isArray(value)) {
+    if (!value.length) return ['[]']
+    return value.flatMap((item) => {
+      if (item && typeof item === 'object') {
+        const nested = stringifyFrontmatterValue(item, nextIndent)
+        if (!nested.length) return ['- {}']
+        return [`- ${nested[0]}`, ...nested.slice(1).map((line) => `${indent}  ${line}`)]
+      }
+      return [`- ${String(item)}`]
+    })
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+    if (!entries.length) return ['{}']
+    const lines: string[] = []
+    for (const [key, nestedValue] of entries) {
+      const nestedLines = stringifyFrontmatterValue(nestedValue, nextIndent)
+      if (nestedLines.length === 1) {
+        lines.push(`${key}: ${nestedLines[0]}`)
+      } else {
+        lines.push(`${key}:`)
+        for (const nestedLine of nestedLines) {
+          lines.push(`${nextIndent}${nestedLine}`)
+        }
+      }
+    }
+    return lines
+  }
+  if (typeof value === 'string') return [value]
+  if (typeof value === 'number' || typeof value === 'boolean') return [String(value)]
+  if (value === null) return ['null']
+  return ['']
+}
+
+function buildMarkdownWithFrontmatter(frontmatter: Record<string, unknown>, body: string): string {
+  const entries = Object.entries(frontmatter)
+  if (!entries.length) return body
+  const lines: string[] = []
+  for (const [key, value] of entries) {
+    const valueLines = stringifyFrontmatterValue(value, '  ')
+    if (valueLines.length === 1) {
+      lines.push(`${key}: ${valueLines[0]}`)
+      continue
+    }
+    lines.push(`${key}:`)
+    for (const valueLine of valueLines) {
+      lines.push(`  ${valueLine}`)
+    }
+  }
+  return `---\n${lines.join('\n')}\n---\n${body}`
+}
+
+function parseVaultAndNotePath(
+  searchParams: URLSearchParams,
+  rawPath: string | null,
+): { vault: string; notePath: string } | null {
+  const explicitVault = searchParams.get('vault')?.trim()
+  const explicitNotePath = searchParams.get('notePath')?.trim()
+  if (explicitVault && explicitNotePath) {
+    return { vault: explicitVault, notePath: normalizeNodePath(explicitNotePath) }
+  }
+
+  if (!rawPath) return null
+  const normalizedPath = normalizeNodePath(rawPath)
+  const splitIndex = normalizedPath.indexOf('/')
+  if (splitIndex === -1) return null
+  const vault = normalizedPath.slice(0, splitIndex)
+  const notePath = normalizedPath.slice(splitIndex + 1)
+  if (!vault || !notePath) return null
+  return { vault, notePath }
 }
 
 async function buildFileTree(
@@ -97,6 +216,32 @@ export async function GET(request: NextRequest) {
     const maxDepth = Number.isFinite(depthParam) ? Math.max(0, Math.min(depthParam, 8)) : Number.POSITIVE_INFINITY
 
     if (action === 'tree') {
+      if (isOrcaBrainConfigured()) {
+        try {
+          const { vaults } = await listVaults()
+          const tree: MemoryFile[] = []
+
+          for (const vault of vaults) {
+            const { notes } = await listNotes(vault)
+            tree.push(...brainToMcTree(vault, notes))
+          }
+
+          if (path) {
+            const directory = findDirectoryNode(tree, path)
+            if (!directory || directory.type !== 'directory') {
+              return NextResponse.json({ error: 'Directory not found' }, { status: 404 })
+            }
+            const children = directory.children ?? []
+            return NextResponse.json({ tree: limitTreeDepth(children, maxDepth) })
+          }
+
+          return NextResponse.json({ tree: limitTreeDepth(tree, maxDepth) })
+        } catch (error) {
+          logger.warn({ err: error }, 'Orca Brain tree request failed')
+          return orcaBrainUnavailable(error)
+        }
+      }
+
       // Return the file tree
       if (!MEMORY_PATH) {
         return NextResponse.json({ tree: [] })
@@ -140,6 +285,31 @@ export async function GET(request: NextRequest) {
     }
 
     if (action === 'content' && path) {
+      if (isOrcaBrainConfigured()) {
+        const parsed = parseVaultAndNotePath(searchParams, path)
+        if (!parsed) {
+          return NextResponse.json({ error: 'Invalid Orca Brain note path' }, { status: 400 })
+        }
+        try {
+          const note = await readNote(parsed.vault, parsed.notePath)
+          const resolvedPath = `${parsed.vault}/${normalizeNodePath(note.path)}`
+          const content = buildMarkdownWithFrontmatter(note.frontmatter, note.body)
+          const wikiLinks = extractWikiLinks(content)
+          const schema = validateSchema(content)
+
+          return NextResponse.json({
+            content,
+            frontmatter: note.frontmatter,
+            path: resolvedPath,
+            wikiLinks,
+            schema,
+          })
+        } catch (error) {
+          logger.warn({ err: error, path }, 'Orca Brain content request failed')
+          return orcaBrainUnavailable(error)
+        }
+      }
+
       // Return file content
       if (!isPathAllowed(path)) {
         return NextResponse.json({ error: 'Path not allowed' }, { status: 403 })

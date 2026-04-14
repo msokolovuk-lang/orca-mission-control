@@ -6,6 +6,8 @@ import { config } from '@/lib/config'
 import { requireRole } from '@/lib/auth'
 import { readLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { getGraph, listVaults } from '@/lib/orca/brain'
+import { brainGraphToMcGraph } from '@/lib/orca/memory-mapping'
 
 interface AgentFileInfo {
   path: string
@@ -24,6 +26,16 @@ interface AgentGraphData {
 const memoryDbDir = config.openclawStateDir
   ? path.join(config.openclawStateDir, 'memory')
   : ''
+
+function isOrcaBrainConfigured(): boolean {
+  return Boolean(process.env.ORCA_GATEWAY_URL?.trim() && process.env.ORCA_GATEWAY_TOKEN?.trim())
+}
+
+function getErrorDetail(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return 'Unknown Orca Brain error'
+}
 
 function getAgentData(dbPath: string, agentName: string): AgentGraphData | null {
   try {
@@ -81,14 +93,45 @@ export async function GET(request: NextRequest) {
   const limited = readLimiter(request)
   if (limited) return limited
 
+  const agentFilter = request.nextUrl.searchParams.get('agent') || 'all'
+
+  if (isOrcaBrainConfigured()) {
+    try {
+      const targetVaults =
+        agentFilter === 'all' ? (await listVaults()).vaults : [agentFilter]
+      const agents: Array<{
+        id: string
+        name: string
+        nodes: Array<{ id: string; label: string }>
+        edges: Array<{ source: string; target: string }>
+        dbSize: number
+        totalChunks: number
+        totalFiles: number
+        files: Array<{ path: string; chunks: number; textSize: number }>
+      }> = []
+
+      for (const vault of targetVaults) {
+        const graph = await getGraph(vault)
+        const mapped = brainGraphToMcGraph(graph, vault)
+        agents.push(...mapped.agents)
+      }
+
+      return NextResponse.json({ agents })
+    } catch (error) {
+      logger.warn({ err: error }, 'Orca Brain graph request failed')
+      return NextResponse.json(
+        { error: 'orca-brain-unavailable', detail: getErrorDetail(error) },
+        { status: 502 },
+      )
+    }
+  }
+
   if (!memoryDbDir || !existsSync(memoryDbDir)) {
     return NextResponse.json(
       { error: 'Memory directory not available', agents: [] },
       { status: 404 }
     )
   }
-
-  const agentFilter = request.nextUrl.searchParams.get('agent') || 'all'
 
   try {
     const entries = readdirSync(memoryDbDir).filter((f) => f.endsWith('.sqlite'))
