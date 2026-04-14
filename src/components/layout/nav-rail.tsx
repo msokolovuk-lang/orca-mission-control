@@ -796,7 +796,10 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
-  const userName = currentUser?.display_name || currentUser?.username || tcs('user')
+  const rawSidebarTitle = currentUser?.display_name || currentUser?.username || tcs('user')
+  const userName = /^orca\s+admin$/i.test(String(rawSidebarTitle).trim())
+    ? tcs('roleAdmin')
+    : rawSidebarTitle
   const roleKey = currentUser?.role || 'user'
   const roleLabel =
     roleKey === 'admin' ? tcs('roleAdmin')

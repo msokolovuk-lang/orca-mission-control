@@ -309,12 +309,12 @@ export function MemoryGraph() {
     setActives([node.id])
     if (node.data) {
       const d = node.data as { filePath: string; chunks: number; textSize: number; agentName: string }
-      setHoveredNode({ label: d.filePath, sub: `${d.chunks} chunks / ${formatBytes(d.textSize)}` })
+      setHoveredNode({ label: d.filePath, sub: `${d.chunks} ${t('statChunks')} / ${formatBytes(d.textSize)}` })
     } else if (node.id.startsWith('hub-')) {
       const name = node.id.replace('hub-', '')
       const agent = agents.find(a => a.name === name)
       if (agent) {
-        setHoveredNode({ label: agent.name, sub: `${agent.totalChunks} chunks / ${agent.totalFiles} files / ${formatBytes(agent.dbSize)}` })
+        setHoveredNode({ label: agent.name, sub: `${agent.totalChunks} ${t('statChunks')} / ${agent.totalFiles} ${t('statFiles')} / ${formatBytes(agent.dbSize)}` })
       }
     }
   }, [agents])
@@ -463,7 +463,7 @@ export function MemoryGraph() {
               </button>
             </div>
             <div className="flex items-center gap-4 text-[10px] font-mono text-[#6c7086]">
-              <span><span className="text-[#cba6f7]">{selectedFile.chunks}</span> {t('chunks')}</span>
+              <span><span className="text-[#cba6f7]">{selectedFile.chunks}</span> {t('statChunks')}</span>
               <span><span className="text-[#89b4fa]">{formatBytes(selectedFile.textSize)}</span> {t('text')}</span>
             </div>
           </div>

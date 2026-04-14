@@ -463,7 +463,8 @@ export function AgentSquadPanelPhase3() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
-                          {agent.role}{modelName && <> · <span className="font-mono text-muted-foreground/80">{modelName}</span></>}
+                          {(agent.role?.toLowerCase?.() === 'executor' ? t('roleExecutor') : agent.role)}
+                          {modelName && <> · <span className="font-mono text-muted-foreground/80">{modelName}</span></>}
                         </p>
                       </div>
                     </div>

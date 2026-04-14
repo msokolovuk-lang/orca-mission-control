@@ -487,7 +487,12 @@ function ModeBadge({
     dotClass = 'bg-amber-500 animate-pulse'
     borderClass = 'border-amber-500/25 bg-amber-500/10'
     textClass = 'text-amber-400'
-    statusLabel = th('retry', { count: connection.reconnectAttempts })
+    // Must match max attempts in useWebSocket (src/lib/websocket.ts)
+    const WS_MAX_RECONNECT_ATTEMPTS = 10
+    statusLabel = th('reconnectProgress', {
+      current: connection.reconnectAttempts,
+      max: WS_MAX_RECONNECT_ATTEMPTS,
+    })
   } else {
     dotClass = 'bg-red-500 animate-pulse'
     borderClass = 'border-red-500/25 bg-red-500/10'
