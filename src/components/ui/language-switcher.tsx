@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { locales, localeNames, type Locale } from '@/i18n/config'
 import { Button } from '@/components/ui/button'
 
@@ -12,6 +12,7 @@ function setLocaleCookie(locale: Locale) {
 
 /** Popover-style language switcher for the header bar */
 export function LanguageSwitcher() {
+  const tc = useTranslations('common')
   const currentLocale = useLocale() as Locale
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -34,8 +35,8 @@ export function LanguageSwitcher() {
         onClick={() => setOpen(!open)}
         variant="ghost"
         size="icon-sm"
-        title="Language"
-        aria-label="Language"
+        title={tc('language')}
+        aria-label={tc('language')}
       >
         <GlobeIcon />
       </Button>
@@ -70,6 +71,7 @@ export function LanguageSwitcher() {
 
 /** Native select variant for settings panel and login page */
 export function LanguageSwitcherSelect() {
+  const tc = useTranslations('common')
   const currentLocale = useLocale() as Locale
 
   return (
@@ -77,7 +79,7 @@ export function LanguageSwitcherSelect() {
       value={currentLocale}
       onChange={(e) => setLocaleCookie(e.target.value as Locale)}
       className="h-9 px-3 rounded-lg bg-secondary border border-border text-sm text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-smooth"
-      aria-label="Language"
+      aria-label={tc('language')}
     >
       {locales.map((loc) => (
         <option key={loc} value={loc}>

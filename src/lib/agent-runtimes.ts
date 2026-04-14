@@ -286,12 +286,14 @@ function detectOpenClaw(): RuntimeStatus {
   return { id: 'openclaw', ...meta, installed, version, running, authenticated: true }
 }
 
-function detectHermes(): RuntimeStatus {
+async function detectHermes(): Promise<RuntimeStatus> {
   const meta = RUNTIME_META.hermes
-  const installed = isExternalAgentInstalled()
+  const installedBase = isExternalAgentInstalled()
+  const orcaConfigured = Boolean(process.env.ORCA_GATEWAY_URL?.trim() && process.env.ORCA_GATEWAY_TOKEN?.trim())
+  const installed = installedBase || orcaConfigured
   let version: string | null = null
 
-  if (installed) {
+  if (installedBase) {
     try {
       const path = require('node:path')
       const homeDir = require('node:os').homedir()
@@ -322,11 +324,11 @@ function detectHermes(): RuntimeStatus {
     }
   }
 
-  const running = installed && isExternalGatewayRunning()
+  const running = await isExternalGatewayRunning()
 
   // Check if hermes has a provider/model configured
   let authenticated = false
-  if (installed) {
+  if (installedBase) {
     try {
       const homeDir = require('node:os').homedir()
       const configPath = join(homeDir, '.hermes', 'config.yaml')
@@ -339,6 +341,7 @@ function detectHermes(): RuntimeStatus {
       // ignore
     }
   }
+  if (orcaConfigured) authenticated = true
 
   return { id: 'hermes', ...meta, installed, version, running, authenticated }
 }
@@ -464,20 +467,22 @@ function detectCodex(): RuntimeStatus {
   return { id: 'codex', ...meta, installed, version, running: false, authenticated }
 }
 
-const DETECTORS: Record<RuntimeId, () => RuntimeStatus> = {
+const DETECTORS: Record<Exclude<RuntimeId, 'hermes'>, () => RuntimeStatus> = {
   openclaw: detectOpenClaw,
-  hermes: detectHermes,
   claude: detectClaude,
   codex: detectCodex,
 }
 
-export function detectRuntime(id: RuntimeId): RuntimeStatus {
+export async function detectRuntime(id: RuntimeId): Promise<RuntimeStatus> {
+  if (id === 'hermes') return detectHermes()
   const detector = DETECTORS[id]
-  return detector ? detector() : { id, name: id, description: '', installed: false, version: null, running: false, authRequired: false, authHint: '', authenticated: false }
+  return detector
+    ? detector()
+    : { id, name: id, description: '', installed: false, version: null, running: false, authRequired: false, authHint: '', authenticated: false }
 }
 
-export function detectAllRuntimes(): RuntimeStatus[] {
-  return Object.values(DETECTORS).map(fn => fn())
+export async function detectAllRuntimes(): Promise<RuntimeStatus[]> {
+  return Promise.all([detectOpenClaw(), detectHermes(), detectClaude(), detectCodex()])
 }
 
 // ---------------------------------------------------------------------------

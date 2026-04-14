@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   // Clear caches so freshly-installed runtimes are detected immediately
   clearAgentDetectionCache()
-  const runtimes = detectAllRuntimes()
+  const runtimes = await detectAllRuntimes()
   const activeJobs = getActiveJobs()
   const isDocker = existsSync('/.dockerenv')
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (!runtime || !VALID_RUNTIMES.has(runtime)) {
       return NextResponse.json({ error: 'Invalid runtime' }, { status: 400 })
     }
-    const status = detectRuntime(runtime)
+    const status = await detectRuntime(runtime)
     return NextResponse.json({ status })
   }
 

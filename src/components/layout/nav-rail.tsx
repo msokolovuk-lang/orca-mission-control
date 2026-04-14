@@ -410,44 +410,10 @@ export function NavRail() {
           ))}
         </div>
 
-        {/* Promo banners */}
         {sidebarExpanded && (
-          <div className="px-2 pb-2 space-y-2 shrink-0">
-            <a
-              href="https://x.com/nyk_builderz/status/2022996371922649192?s=20"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-lg border border-border/50 bg-surface-1 hover:bg-surface-2 hover:border-primary/30 transition-all duration-200 p-2 group"
-            >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-2xs font-semibold text-foreground group-hover:text-primary transition-colors">xint</span>
-                <span className="text-[9px] px-1 py-px rounded bg-primary/15 text-primary font-mono">CLI</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground/70 leading-snug">{tn('promoXint')}</p>
-            </a>
-            <a
-              href="https://builderz.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-lg border border-void-cyan/20 bg-gradient-to-br from-void-cyan/5 to-transparent hover:from-void-cyan/10 hover:border-void-cyan/40 transition-all duration-200 p-2 group"
-            >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-2xs font-bold text-foreground group-hover:text-void-cyan transition-colors">builderz</span>
-                <span className="text-[9px] px-1 py-px rounded bg-void-cyan/15 text-void-cyan">.dev</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground/70 leading-snug">{tn('promoBuilderz')}</p>
-            </a>
-          </div>
-        )}
-
-        {/* Attribution */}
-        {sidebarExpanded && (
-          <div className="px-3 pb-1">
-            <p className="text-[10px] text-muted-foreground/30 text-center">
-              {tn('builtWithCareBy')}{' '}
-              <a href="https://x.com/nyk_builderz" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-primary transition-colors">
-                nyk
-              </a>
+          <div className="px-3 pb-2 shrink-0">
+            <p className="text-[10px] text-muted-foreground/40 text-center font-medium">
+              {tn('sidebarAttribution', { version: APP_VERSION })}
             </p>
           </div>
         )}
@@ -831,6 +797,12 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
   const [createError, setCreateError] = useState<string | null>(null)
 
   const userName = currentUser?.display_name || currentUser?.username || tcs('user')
+  const roleKey = currentUser?.role || 'user'
+  const roleLabel =
+    roleKey === 'admin' ? tcs('roleAdmin')
+      : roleKey === 'operator' ? tcs('roleOperator')
+        : roleKey === 'viewer' ? tcs('roleViewer')
+          : tcs('user')
   const initials = userName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const tenantName = activeTenant?.display_name || defaultOrgName
   const projectName = activeProject?.name
@@ -921,7 +893,7 @@ function ContextSwitcher({ currentUser, isAdmin, isLocal, isConnected, tenants, 
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-foreground truncate">{userName}</div>
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span>{currentUser?.role || 'user'}</span>
+                    <span>{roleLabel}</span>
                     <span className="text-muted-foreground/30">·</span>
                     <span className={`flex items-center gap-1`}>
                       <span className={`w-1.5 h-1.5 rounded-full inline-block ${connectionDotClass}`} />

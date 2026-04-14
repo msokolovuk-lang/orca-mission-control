@@ -454,7 +454,11 @@ export function AgentSquadPanelPhase3() {
                                   ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
                                   : 'bg-slate-500/15 text-slate-300 border-slate-500/30'
                             }`}>
-                              {(agent as any).source}
+                              {(agent as any).source === 'local'
+                                ? t('sourceLocal')
+                                : (agent as any).source === 'gateway'
+                                  ? t('sourceGateway')
+                                  : t('sourceOther', { source: String((agent as any).source) })}
                             </span>
                           )}
                         </div>
@@ -468,9 +472,15 @@ export function AgentSquadPanelPhase3() {
                       {hasRecentHeartbeat(agent) && (
                         <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" title={t('recentHeartbeat')} />
                       )}
-                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs capitalize ${statusBadgeStyles[agent.status]}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs ${statusBadgeStyles[agent.status]}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${(statusCardStyles[agent.status] || defaultCardStyle).dot}`} />
-                        {agent.status}
+                        {(
+                          agent.status === 'offline' ? t('agentStatus.offline')
+                            : agent.status === 'idle' ? t('agentStatus.idle')
+                              : agent.status === 'busy' ? t('agentStatus.busy')
+                                : agent.status === 'error' ? t('agentStatus.error')
+                                  : agent.status
+                        )}
                       </span>
                     </div>
                   </div>

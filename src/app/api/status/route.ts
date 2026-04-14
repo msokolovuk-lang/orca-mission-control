@@ -12,7 +12,7 @@ import { MODEL_CATALOG } from '@/lib/models'
 import { logger } from '@/lib/logger'
 import { detectProviderSubscriptions, getPrimarySubscription } from '@/lib/provider-subscriptions'
 import { APP_VERSION } from '@/lib/version'
-import { isExternalAgentInstalled, scanExternalAgentSessions } from '@/lib/agent-sessions'
+import { isExternalAgentInstalled, scanExternalAgentSessions, isExternalGatewayRunning } from '@/lib/agent-sessions'
 import { registerMcAsDashboard } from '@/lib/gateway-runtime'
 
 export async function GET(request: NextRequest) {
@@ -625,7 +625,15 @@ async function getCapabilities(request?: NextRequest) {
     // ignore — fall through to default probe
   }
 
-  const gateway = gatewayReachable || await isPortOpen(config.gatewayHost, config.gatewayPort)
+  let gateway = gatewayReachable || await isPortOpen(config.gatewayHost, config.gatewayPort)
+
+  if (!gateway) {
+    try {
+      gateway = await isExternalGatewayRunning()
+    } catch {
+      // Orca unreachable or not configured
+    }
+  }
 
   const openclawHome = Boolean(
     (config.openclawStateDir && existsSync(config.openclawStateDir)) ||

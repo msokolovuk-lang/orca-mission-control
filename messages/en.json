@@ -105,6 +105,7 @@
     "integrations": "Integrations",
     "debug": "Debug",
     "settings": "Settings",
+    "superAdmin": "Super Admin",
     "group": {
       "observe": "OBSERVE",
       "automate": "AUTOMATE",
@@ -122,7 +123,8 @@
     "promoXint": "X power tools for agents.",
     "promoBuilderz": "AI-native dev shop · Solana experts.",
     "builtWithCareBy": "Built with care by",
-    "overdue": "Overdue"
+    "overdue": "Overdue",
+    "sidebarAttribution": "ИИ-Ателье by Sokolov · v{version}"
   },
   "settings": {
     "language": "Language",
@@ -263,7 +265,10 @@
     "defaultWorkspace": "Default",
     "search": "Search",
     "commandSearch": "Command search",
-    "nav": "Nav"
+    "nav": "Nav",
+    "changeTheme": "Change theme",
+    "themeDark": "Dark",
+    "themeLight": "Light"
   },
   "contextSwitcher": {
     "localMode": "Local Mode",
@@ -293,7 +298,10 @@
     "openclaw": "openclaw",
     "claude": "claude",
     "codex": "codex",
-    "included": "included"
+    "included": "included",
+    "roleAdmin": "Administrator",
+    "roleOperator": "Operator",
+    "roleViewer": "Viewer"
   },
   "localModeBanner": {
     "noGatewayDetected": "No gateway detected",
@@ -1666,6 +1674,12 @@
   "memoryBrowser": {
     "hideSidebar": "Hide sidebar",
     "showSidebar": "Show sidebar",
+    "viewFiles": "files",
+    "viewGraph": "graph",
+    "viewHealth": "health",
+    "filterAll": "all",
+    "filterDaily": "daily",
+    "filterKnowledge": "knowledge",
     "fileCountSize": "{count} files / {size}",
     "indexing": "indexing…",
     "newFile": "+ new",
@@ -2159,6 +2173,15 @@
     "wakeViaSession": "Wake agent via session",
     "unhide": "Unhide",
     "hide": "Hide",
+    "sourceLocal": "local",
+    "sourceGateway": "gateway",
+    "sourceOther": "{source}",
+    "agentStatus": {
+      "offline": "offline",
+      "idle": "idle",
+      "busy": "busy",
+      "error": "error"
+    },
     "time": {
       "never": "Never",
       "justNow": "Just now",

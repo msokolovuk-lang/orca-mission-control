@@ -19,6 +19,48 @@ interface MemoryFile {
   children?: MemoryFile[]
 }
 
+function normalizeMemoryTreePayload(data: unknown): MemoryFile[] {
+  if (!data || typeof data !== 'object') return []
+  const d = data as Record<string, unknown>
+  if (Array.isArray(d.tree)) return d.tree as MemoryFile[]
+  if (Array.isArray(d.files)) return d.files as MemoryFile[]
+  const nested = d.data
+  if (nested && typeof nested === 'object') {
+    const dn = nested as Record<string, unknown>
+    if (Array.isArray(dn.tree)) return dn.tree as MemoryFile[]
+    if (Array.isArray(dn.files)) return dn.files as MemoryFile[]
+  }
+  return []
+}
+
+function pathMatchesMemoryFilter(filePath: string, prefixes: string[]): boolean {
+  const norm = filePath.replace(/\\/g, '/')
+  const withSlash = `${norm}/`
+  return prefixes.some((prefix) => {
+    const p = prefix.endsWith('/') ? prefix : `${prefix}/`
+    return withSlash.startsWith(p) || norm.includes(`/${p}`) || norm === p.replace(/\/$/, '')
+  })
+}
+
+function filterMemoryTreeByPrefix(files: MemoryFile[], prefixes: string[]): MemoryFile[] {
+  const out: MemoryFile[] = []
+  for (const file of files) {
+    if (file.type === 'directory') {
+      const children = file.children?.length ? filterMemoryTreeByPrefix(file.children, prefixes) : []
+      if (children.length > 0) {
+        out.push({ ...file, children })
+        continue
+      }
+      if (pathMatchesMemoryFilter(file.path, prefixes)) {
+        out.push({ ...file, children: [] })
+      }
+      continue
+    }
+    if (pathMatchesMemoryFilter(file.path, prefixes)) out.push(file)
+  }
+  return out
+}
+
 function mergeDirectoryChildren(files: MemoryFile[], targetPath: string, children: MemoryFile[]): MemoryFile[] {
   return files.map((file) => {
     if (file.path === targetPath && file.type === 'directory') {
@@ -136,24 +178,15 @@ export function MemoryBrowserPanel() {
 
   const loadFileTree = useCallback(async () => {
     setIsLoading(true)
+    setIsHydratingTree(true)
     try {
-      const data = await fetchTree({ depth: 1 })
-      setMemoryFiles(data.tree || [])
+      const data = await fetchTree()
+      setMemoryFiles(normalizeMemoryTreePayload(data))
       setExpandedFolders(new Set(['daily', 'knowledge', 'memory', 'knowledge-base']))
-      setIsHydratingTree(true)
-      void fetchTree()
-        .then((fullData) => {
-          setMemoryFiles(fullData.tree || [])
-        })
-        .catch((error) => {
-          log.error('Failed to hydrate full file tree:', error)
-        })
-        .finally(() => {
-          setIsHydratingTree(false)
-        })
     } catch (error) {
       log.error('Failed to load file tree:', error)
     } finally {
+      setIsHydratingTree(false)
       setIsLoading(false)
     }
   }, [fetchTree, setMemoryFiles])
@@ -165,12 +198,9 @@ export function MemoryBrowserPanel() {
   const filteredFiles = useMemo(() => {
     if (fileFilter === 'all') return memoryFiles
     const prefixes = fileFilter === 'daily'
-      ? ['daily/', 'memory/']
-      : ['knowledge/', 'knowledge-base/']
-    return memoryFiles.filter((file) => {
-      const p = `${file.path.replace(/\\/g, '/')}/`
-      return prefixes.some((prefix) => p.startsWith(prefix))
-    })
+      ? ['daily', 'memory']
+      : ['knowledge', 'knowledge-base', 'policies']
+    return filterMemoryTreeByPrefix(memoryFiles, prefixes)
   }, [memoryFiles, fileFilter])
 
   const loadFileContent = async (filePath: string) => {
@@ -231,7 +261,7 @@ export function MemoryBrowserPanel() {
     if (!expandedFolders.has(folderPath) && needsChildren) {
       try {
         const data = await fetchTree({ path: folderPath, depth: 1 })
-        setMemoryFiles(mergeDirectoryChildren(memoryFilesRef.current, folderPath, data.tree || []))
+        setMemoryFiles(mergeDirectoryChildren(memoryFilesRef.current, folderPath, normalizeMemoryTreePayload(data)))
       } catch (error) {
         log.error('Failed to load folder children:', error)
       }
@@ -478,6 +508,12 @@ export function MemoryBrowserPanel() {
     'health',
   ]
 
+  const viewLabel = (view: 'files' | 'graph' | 'health') => {
+    if (view === 'files') return t('viewFiles')
+    if (view === 'graph') return t('viewGraph')
+    return t('viewHealth')
+  }
+
   return (
     <div className="h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
       {/* Top bar */}
@@ -492,8 +528,8 @@ export function MemoryBrowserPanel() {
           <button
             key={view}
             onClick={() => setActiveView(view)}
-            className={`px-2.5 py-1 rounded text-xs font-mono transition-colors capitalize ${activeView === view ? 'bg-[hsl(var(--surface-2))] text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-          >{view}</button>
+            className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${activeView === view ? 'bg-[hsl(var(--surface-2))] text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >{viewLabel(view)}</button>
         ))}
         <div className="flex-1" />
         {healthReport && (
@@ -514,7 +550,7 @@ export function MemoryBrowserPanel() {
             </div>
             <div className="flex gap-0.5 px-2 pb-2">
               {(['all', 'daily', 'knowledge'] as const).map((f) => (
-                <button key={f} onClick={() => setFileFilter(f)} className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${fileFilter === f ? 'bg-[hsl(var(--surface-2))] text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}>{f}</button>
+                <button key={f} onClick={() => setFileFilter(f)} className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${fileFilter === f ? 'bg-[hsl(var(--surface-2))] text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}>{f === 'all' ? t('filterAll') : f === 'daily' ? t('filterDaily') : t('filterKnowledge')}</button>
               ))}
             </div>
             {searchResults.length > 0 && (

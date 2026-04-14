@@ -102,10 +102,12 @@ interface GatewayStatus {
   error?: string
 }
 
-function getHermesGatewayStatus(): GatewayStatus {
+async function getHermesGatewayStatus(): Promise<GatewayStatus> {
   const homeDir = config.homeDir
-  const installed = existsSync(join(homeDir, '.hermes'))
-  const running = installed && isExternalGatewayRunning()
+  const hermesDirInstalled = existsSync(join(homeDir, '.hermes'))
+  const orcaConfigured = Boolean(process.env.ORCA_GATEWAY_URL?.trim() && process.env.ORCA_GATEWAY_TOKEN?.trim())
+  const installed = hermesDirInstalled || orcaConfigured
+  const running = await isExternalGatewayRunning()
 
   let pid: number | null = null
   if (running) {
@@ -151,7 +153,7 @@ export async function GET(request: NextRequest) {
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const gateways: GatewayStatus[] = []
-  gateways.push(getHermesGatewayStatus())
+  gateways.push(await getHermesGatewayStatus())
   gateways.push(getOpenClawGatewayStatus())
 
   return NextResponse.json({ gateways })
@@ -202,11 +204,11 @@ export async function POST(request: NextRequest) {
       if (inDocker) {
         if (action === 'start') {
           // If already running, short-circuit
-          if (isExternalGatewayRunning()) {
+          if (await isExternalGatewayRunning()) {
             return NextResponse.json({
               success: true,
               output: 'Hermes gateway already running',
-              status: getHermesGatewayStatus(),
+              status: await getHermesGatewayStatus(),
             })
           }
           const result = startHermesGatewayDetached(hermesBin, config.homeDir)
@@ -214,14 +216,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
               success: false,
               output: `Failed to start: ${result.error || 'unknown error'}`,
-              status: getHermesGatewayStatus(),
+              status: await getHermesGatewayStatus(),
             })
           }
           logger.info({ pid: result.pid }, 'Hermes gateway started (detached) in Docker')
           return NextResponse.json({
             success: true,
             output: `Hermes gateway started in foreground mode (PID ${result.pid}). Logs: ~/.hermes/gateway.log`,
-            status: getHermesGatewayStatus(),
+            status: await getHermesGatewayStatus(),
           })
         }
 
@@ -230,7 +232,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             success: result.stopped,
             output: result.stopped ? 'Hermes gateway stopped' : (result.error || 'Failed to stop'),
-            status: getHermesGatewayStatus(),
+            status: await getHermesGatewayStatus(),
           })
         }
 
@@ -244,7 +246,7 @@ export async function POST(request: NextRequest) {
             output: result.pid
               ? `Hermes gateway restarted (PID ${result.pid})`
               : `Failed to restart: ${result.error || 'unknown error'}`,
-            status: getHermesGatewayStatus(),
+            status: await getHermesGatewayStatus(),
           })
         }
       }
@@ -260,7 +262,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: result.code === 0,
         output: ((result.stdout || '') + '\n' + (result.stderr || '')).trim(),
-        status: getHermesGatewayStatus(),
+        status: await getHermesGatewayStatus(),
       })
     }
 
