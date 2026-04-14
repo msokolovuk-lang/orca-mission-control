@@ -43,7 +43,6 @@ export function Dashboard() {
   const [dbStats, setDbStats] = useState<DbStats | null>(null)
   const [claudeStats, setClaudeStats] = useState<ClaudeStats | null>(null)
   const [githubStats, setGithubStats] = useState<any>(null)
-  const [hermesCronJobCount, setHermesCronJobCount] = useState(0)
   const [loading, setLoading] = useState({
     system: true,
     sessions: true,
@@ -102,15 +101,6 @@ export function Dashboard() {
           .finally(() => setLoading(prev => ({ ...prev, github: false })))
       )
 
-      requests.push(
-        fetch('/api/hermes')
-          .then(async (res) => {
-            if (!res.ok) return
-            const data = await res.json()
-            if (data?.cronJobCount != null) setHermesCronJobCount(data.cronJobCount)
-          })
-          .catch(() => {})
-      )
     } else {
       setLoading(prev => ({ ...prev, claude: false, github: false }))
     }
@@ -256,7 +246,7 @@ export function Dashboard() {
     isSessionsLoading,
     isClaudeLoading,
     isGithubLoading,
-    hermesCronJobCount,
+    hermesCronJobCount: 0,
     subscriptionLabel,
     subscriptionPrice,
   }
