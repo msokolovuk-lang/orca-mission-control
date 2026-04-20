@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/ui/loader'
 import { useMissionControl } from '@/store'
 import { createClientLogger } from '@/lib/client-logger'
+import { useSmartPoll } from '@/lib/use-smart-poll'
+import type { DelegationLogEntry, UsageByAgentEntry, UsageSummary } from '@/lib/orca/usage'
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, BarChart, Bar,
@@ -84,8 +86,79 @@ const formatCost = (cost: number) => '$' + cost.toFixed(4)
 
 const getModelDisplayName = (name: string) => name.split('/').pop() || name
 
-type View = 'overview' | 'agents' | 'sessions' | 'tasks'
+type View = 'overview' | 'agents' | 'delegation' | 'sessions' | 'tasks'
 type Timeframe = 'hour' | 'day' | 'week' | 'month'
+
+function mergeAgentLists(
+  byAgent: ByAgentResponse | null,
+  gwRows: UsageByAgentEntry[],
+): { agents: ByAgentEntry[]; summary: ByAgentResponse['summary'] } {
+  const gwAgg = new Map<string, { in: number; out: number; cost: number; tasks: number }>()
+  for (const e of gwRows) {
+    const cur = gwAgg.get(e.agent_id) ?? { in: 0, out: 0, cost: 0, tasks: 0 }
+    cur.in += e.input_tokens
+    cur.out += e.output_tokens
+    cur.cost += e.cost_usd
+    cur.tasks += e.tasks_count
+    gwAgg.set(e.agent_id, cur)
+  }
+
+  const locals = byAgent?.agents ?? []
+  const days = byAgent?.summary.days ?? 7
+  const matchedGwIds = new Set<string>()
+
+  const merged: ByAgentEntry[] = locals.map(loc => {
+    let g = gwAgg.get(loc.agent)
+    let gwKey: string | null = g ? loc.agent : null
+    if (!g) {
+      for (const [id, val] of gwAgg) {
+        if (id.toLowerCase() === loc.agent.toLowerCase()) {
+          g = val
+          gwKey = id
+          break
+        }
+      }
+    }
+    if (gwKey !== null) matchedGwIds.add(gwKey)
+
+    const addonIn = g?.in ?? 0
+    const addonOut = g?.out ?? 0
+    return {
+      ...loc,
+      total_input_tokens: loc.total_input_tokens + addonIn,
+      total_output_tokens: loc.total_output_tokens + addonOut,
+      total_tokens: loc.total_tokens + addonIn + addonOut,
+      total_cost: loc.total_cost + (g?.cost ?? 0),
+    }
+  })
+
+  for (const [agentId, g] of gwAgg) {
+    if (matchedGwIds.has(agentId)) continue
+    merged.push({
+      agent: agentId,
+      total_input_tokens: g.in,
+      total_output_tokens: g.out,
+      total_tokens: g.in + g.out,
+      total_cost: g.cost,
+      session_count: 0,
+      request_count: g.tasks,
+      last_active: new Date().toISOString(),
+      models: [],
+    })
+  }
+
+  merged.sort((a, b) => b.total_cost - a.total_cost)
+
+  return {
+    agents: merged,
+    summary: {
+      agent_count: merged.length,
+      total_cost: merged.reduce((s, a) => s + a.total_cost, 0),
+      total_tokens: merged.reduce((s, a) => s + a.total_tokens, 0),
+      days,
+    },
+  }
+}
 
 // ── Main Component ──────────────────────────────────
 
@@ -107,6 +180,11 @@ export function CostTrackerPanel() {
   const [sessionCosts, setSessionCosts] = useState<SessionCostEntry[]>([])
   const [sessionSort, setSessionSort] = useState<'cost' | 'tokens' | 'requests' | 'recent'>('cost')
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null)
+
+  const [delegationLog, setDelegationLog] = useState<DelegationLogEntry[]>([])
+  const [delegationSummary, setDelegationSummary] = useState<UsageSummary | null>(null)
+  const [delegationByAgent, setDelegationByAgent] = useState<UsageByAgentEntry[]>([])
+  const [gwLoading, setGwLoading] = useState(true)
 
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -161,6 +239,36 @@ export function CostTrackerPanel() {
     }
   }, [timeframe, usageStats])
 
+  const fetchDelegationData = useCallback(async () => {
+    try {
+      const [logRes, summaryRes, byAgentRes] = await Promise.all([
+        fetch('/api/orca-usage?action=delegation-log&limit=100'),
+        fetch('/api/orca-usage?action=summary'),
+        fetch('/api/orca-usage?action=by-agent'),
+      ])
+      if (logRes.ok) {
+        const logData = await logRes.json()
+        setDelegationLog(logData.entries || [])
+      }
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json()
+        if (summaryData && !Array.isArray(summaryData.entries)) {
+          setDelegationSummary(summaryData as UsageSummary)
+        }
+      }
+      if (byAgentRes.ok) {
+        const byAgentJson = await byAgentRes.json()
+        setDelegationByAgent(byAgentJson.entries || [])
+      }
+    } catch {
+      /* graceful */
+    } finally {
+      setGwLoading(false)
+    }
+  }, [])
+
+  useSmartPoll(fetchDelegationData, 30_000, { pauseWhenSseConnected: true })
+
   useEffect(() => { loadData() }, [loadData])
   useEffect(() => {
     refreshTimer.current = setInterval(loadData, 30_000)
@@ -188,10 +296,12 @@ export function CostTrackerPanel() {
   }
 
   // Derived data
-  const summary = usageStats?.summary
   const agentSummary = byAgentData?.summary
-  const agentList = byAgentData?.agents || []
-  const maxAgentCost = Math.max(...agentList.map(a => a.total_cost), 0.0001)
+  const { agents: mergedAgentList, summary: mergedAgentSummary } = useMemo(
+    () => mergeAgentLists(byAgentData, delegationByAgent),
+    [byAgentData, delegationByAgent],
+  )
+  const maxAgentCost = Math.max(...mergedAgentList.map(a => a.total_cost), 0.0001)
 
   const getAgentTasks = (agentName: string): TaskCostEntry[] => {
     if (!taskData) return []
@@ -211,8 +321,8 @@ export function CostTrackerPanel() {
           </div>
           <div className="flex items-center gap-3">
             {/* View tabs */}
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(['overview', 'agents', 'sessions', 'tasks'] as const).map(v => (
+            <div className="flex rounded-lg border border-border overflow-hidden flex-wrap">
+              {(['overview', 'agents', 'delegation', 'sessions', 'tasks'] as const).map(v => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -220,7 +330,11 @@ export function CostTrackerPanel() {
                     view === v ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {v === 'overview' ? t('viewOverview') : v === 'agents' ? t('agents') : v === 'sessions' ? t('sessionView') : t('tasksWithCosts')}
+                  {v === 'overview' ? t('viewOverview')
+                    : v === 'agents' ? t('agents')
+                    : v === 'delegation' ? t('viewDelegation')
+                    : v === 'sessions' ? t('sessionView')
+                    : t('tasksWithCosts')}
                 </button>
               ))}
             </div>
@@ -244,13 +358,17 @@ export function CostTrackerPanel() {
           taskData={taskData} timeframe={timeframe} chartMode={chartMode}
           setChartMode={setChartMode} exportData={exportData} isExporting={isExporting}
           onRefresh={loadData}
+          delegationCostUsd={delegationSummary?.total_cost_usd ?? 0}
+          overviewAgentCount={mergedAgentSummary.agent_count}
         />
       ) : view === 'agents' ? (
         <AgentsView
-          agents={agentList} summary={agentSummary} maxCost={maxAgentCost}
+          agents={mergedAgentList} summary={mergedAgentSummary} maxCost={maxAgentCost}
           expandedAgent={expandedAgent} setExpandedAgent={setExpandedAgent}
           getAgentTasks={getAgentTasks} onRefresh={loadData}
         />
+      ) : view === 'delegation' ? (
+        <DelegationView entries={delegationLog} loading={gwLoading} />
       ) : view === 'sessions' ? (
         <SessionsView
           sessionCosts={sessionCosts} sessions={sessions}
@@ -267,7 +385,7 @@ export function CostTrackerPanel() {
 
 function OverviewView({
   stats, trendData, agentSummary, taskData, timeframe, chartMode, setChartMode,
-  exportData, isExporting, onRefresh,
+  exportData, isExporting, onRefresh, delegationCostUsd = 0, overviewAgentCount,
 }: {
   stats: UsageStats | null; trendData: TrendData | null
   agentSummary: ByAgentResponse['summary'] | undefined; taskData: TaskCostsResponse | null
@@ -275,6 +393,8 @@ function OverviewView({
   setChartMode: (m: 'incremental' | 'cumulative') => void
   exportData: (f: 'json' | 'csv') => void; isExporting: boolean
   onRefresh: () => void
+  delegationCostUsd?: number
+  overviewAgentCount?: number
 }) {
   const t = useTranslations('costTracker')
   if (!stats) {
@@ -319,13 +439,15 @@ function OverviewView({
     : null
   const efficientCostPerToken = mostEfficient ? mostEfficient[1].totalCost / Math.max(1, mostEfficient[1].totalTokens) : 0
   const potentialSavings = Math.max(0, stats.summary.totalCost - stats.summary.totalTokens * efficientCostPerToken)
+  const combinedCost = stats.summary.totalCost + delegationCostUsd
+  const displayAgentCount = overviewAgentCount ?? agentSummary?.agent_count
 
   return (
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-card border border-border rounded-lg p-5">
-          <div className="text-3xl font-bold text-foreground">{formatCost(stats.summary.totalCost)}</div>
+          <div className="text-3xl font-bold text-foreground">{formatCost(combinedCost)}</div>
           <div className="text-sm text-muted-foreground">{t('totalCost', { timeframe })}</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-5">
@@ -337,7 +459,7 @@ function OverviewView({
           <div className="text-sm text-muted-foreground">{t('apiRequests')}</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-5">
-          <div className="text-3xl font-bold text-foreground">{agentSummary?.agent_count ?? '-'}</div>
+          <div className="text-3xl font-bold text-foreground">{displayAgentCount ?? '-'}</div>
           <div className="text-sm text-muted-foreground">{t('activeAgents')}</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-5">
@@ -481,7 +603,7 @@ function OverviewView({
 function AgentsView({
   agents, summary, maxCost, expandedAgent, setExpandedAgent, getAgentTasks, onRefresh,
 }: {
-  agents: ByAgentEntry[]; summary: ByAgentResponse['summary'] | undefined
+  agents: ByAgentEntry[]; summary: ByAgentResponse['summary']
   maxCost: number; expandedAgent: string | null
   setExpandedAgent: (a: string | null) => void
   getAgentTasks: (name: string) => TaskCostEntry[]; onRefresh: () => void
@@ -489,7 +611,7 @@ function AgentsView({
   const t = useTranslations('costTracker')
   const [expandedSection, setExpandedSection] = useState<'models' | 'tasks'>('tasks')
 
-  if (!summary || agents.length === 0) {
+  if (agents.length === 0 || !summary) {
     return (
       <div className="text-center text-muted-foreground py-12">
         <div className="text-lg mb-2">{t('noAgentData')}</div>
@@ -649,6 +771,60 @@ function AgentsView({
             )
           })}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Delegation View (gateway) ──────────────────────────────────
+
+function DelegationView({ entries, loading }: { entries: DelegationLogEntry[]; loading: boolean }) {
+  const t = useTranslations('costTracker')
+  if (loading && entries.length === 0) {
+    return <Loader variant="panel" label={t('loadingCostData')} />
+  }
+  if (entries.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-12">
+        <div className="text-lg mb-2">{t('delegationNoData')}</div>
+      </div>
+    )
+  }
+  return (
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-secondary/50 text-left text-xs text-muted-foreground">
+              <th className="p-3 font-medium whitespace-nowrap">{t('delegationColTime')}</th>
+              <th className="p-3 font-medium whitespace-nowrap">{t('delegationColAgent')}</th>
+              <th className="p-3 font-medium whitespace-nowrap">{t('delegationColTool')}</th>
+              <th className="p-3 font-medium text-right whitespace-nowrap">{t('inputTokens')}</th>
+              <th className="p-3 font-medium text-right whitespace-nowrap">{t('outputTokens')}</th>
+              <th className="p-3 font-medium text-right whitespace-nowrap">{t('costLabel')}</th>
+              <th className="p-3 font-medium whitespace-nowrap">{t('delegationColModel')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((row, i) => (
+              <tr key={`${row.timestamp}-${row.agent_id}-${i}`} className="border-b border-border/60 last:border-0">
+                <td className="p-3 text-foreground whitespace-nowrap">
+                  {new Date(row.timestamp).toLocaleString()}
+                </td>
+                <td className="p-3 text-foreground">
+                  {row.display_name || row.agent_id}
+                </td>
+                <td className="p-3 text-muted-foreground font-mono text-xs">{row.tool_name}</td>
+                <td className="p-3 text-right tabular-nums">{formatNumber(row.input_tokens)}</td>
+                <td className="p-3 text-right tabular-nums">{formatNumber(row.output_tokens)}</td>
+                <td className="p-3 text-right tabular-nums font-medium">{formatCost(row.total_cost_usd)}</td>
+                <td className="p-3 text-muted-foreground truncate max-w-[14rem]" title={row.model}>
+                  {getModelDisplayName(row.model)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )

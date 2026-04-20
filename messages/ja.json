@@ -1185,7 +1185,13 @@
     "costLabel": "Cost ($)",
     "sessionCount": "{count, plural, one {# session} other {# sessions}}",
     "requestCount": "{count, plural, one {# request} other {# requests}}",
-    "taskCount": "{count, plural, one {# task} other {# tasks}}"
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "viewDelegation": "Delegation",
+    "delegationNoData": "No delegation usage recorded from the gateway yet.",
+    "delegationColTime": "Time",
+    "delegationColAgent": "Agent",
+    "delegationColTool": "Tool",
+    "delegationColModel": "Model"
   },
   "superAdmin": {
     "accessDenied": "Access Denied",
@@ -2200,7 +2206,12 @@
       "errorTaskRequired": "Please enter a task description",
       "errorSpawnFailed": "Failed to spawn agent",
       "errorNetwork": "Network error occurred"
-    }
+    },
+    "usageCost": "Cost",
+    "usageTokens": "Tokens",
+    "usageTasks": "Tasks",
+    "usageNoData": "No usage data from gateway",
+    "gatewayUsageSummary": "Gateway usage (by agent)"
   },
   "orchestration": {
     "tabCommand": "Command",

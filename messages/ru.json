@@ -1194,7 +1194,13 @@
     "costLabel": "Cost ($)",
     "sessionCount": "{count, plural, one {# session} other {# sessions}}",
     "requestCount": "{count, plural, one {# request} other {# requests}}",
-    "taskCount": "{count, plural, one {# task} other {# tasks}}"
+    "taskCount": "{count, plural, one {# task} other {# tasks}}",
+    "viewDelegation": "Делегирование",
+    "delegationNoData": "Нет данных о делегированиях",
+    "delegationColTime": "Время",
+    "delegationColAgent": "Агент",
+    "delegationColTool": "Инструмент",
+    "delegationColModel": "Модель"
   },
   "superAdmin": {
     "accessDenied": "Access Denied",
@@ -2225,7 +2231,12 @@
       "errorTaskRequired": "Please enter a task description",
       "errorSpawnFailed": "Failed to spawn agent",
       "errorNetwork": "Network error occurred"
-    }
+    },
+    "usageCost": "Стоимость",
+    "usageTokens": "Токены",
+    "usageTasks": "Задачи",
+    "usageNoData": "Нет данных о расходах",
+    "gatewayUsageSummary": "Сводка расходов (gateway)"
   },
   "orchestration": {
     "tabCommand": "Команда",

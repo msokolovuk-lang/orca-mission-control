@@ -26,6 +26,73 @@ import { useMissionControl, type Agent } from '@/store'
 
 const log = createClientLogger('AgentSquadPhase3')
 
+interface AgentUsageEntry {
+  agent_id: string
+  day: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+  tasks_count: number
+}
+
+type AggregatedAgentUsage = {
+  agent_id: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+  tasks_count: number
+}
+
+function parseAgentConfig(agent: Agent): Record<string, unknown> {
+  try {
+    const raw = typeof agent.config === 'string' ? JSON.parse(agent.config) : agent.config
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
+
+function aggregateUsageByAgent(entries: AgentUsageEntry[]): Map<string, AggregatedAgentUsage> {
+  const map = new Map<string, AggregatedAgentUsage>()
+  for (const e of entries) {
+    const existing = map.get(e.agent_id)
+    if (existing) {
+      existing.input_tokens += e.input_tokens
+      existing.output_tokens += e.output_tokens
+      existing.cost_usd += e.cost_usd
+      existing.tasks_count += e.tasks_count
+    } else {
+      map.set(e.agent_id, {
+        agent_id: e.agent_id,
+        input_tokens: e.input_tokens,
+        output_tokens: e.output_tokens,
+        cost_usd: e.cost_usd,
+        tasks_count: e.tasks_count,
+      })
+    }
+  }
+  return map
+}
+
+function findGatewayUsageForAgent(agent: Agent, usageMap: Map<string, AggregatedAgentUsage>): AggregatedAgentUsage | undefined {
+  const cfg = parseAgentConfig(agent)
+  const orcaAgentId = String(cfg.orcaAgentId ?? '').trim()
+  const extraOrca =
+    cfg.orca && typeof cfg.orca === 'object' && !Array.isArray(cfg.orca)
+      ? (cfg.orca as Record<string, unknown>)
+      : null
+  const extraId = extraOrca ? String(extraOrca.id ?? '').trim() : ''
+  const nameLower = (agent.name || '').toLowerCase()
+
+  for (const [uid, entry] of usageMap) {
+    const uLow = uid.toLowerCase()
+    if (orcaAgentId && (uid === orcaAgentId || uLow === orcaAgentId.toLowerCase())) return entry
+    if (extraId && (uid === extraId || uLow === extraId.toLowerCase())) return entry
+    if (nameLower && uLow === nameLower) return entry
+  }
+  return undefined
+}
+
 interface WorkItem {
   type: string
   count: number
@@ -106,6 +173,21 @@ export function AgentSquadPanelPhase3() {
   const [syncToast, setSyncToast] = useState<string | null>(null)
   const [syncToastIsError, setSyncToastIsError] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
+  const [agentUsage, setAgentUsage] = useState<Map<string, AggregatedAgentUsage>>(() => new Map())
+
+  const fetchAgentUsage = useCallback(async () => {
+    try {
+      const res = await fetch('/api/orca-usage/by-agent')
+      if (!res.ok) return
+      const data = await res.json()
+      const entries: AgentUsageEntry[] = data.entries || []
+      setAgentUsage(aggregateUsageByAgent(entries))
+    } catch {
+      /* graceful — gateway optional */
+    }
+  }, [])
+
+  useSmartPoll(fetchAgentUsage, 30_000, { pauseWhenSseConnected: true })
 
   // Sync agents from gateway config or local disk
   const syncFromConfig = async (source?: 'local') => {
@@ -429,6 +511,7 @@ export function AgentSquadPanelPhase3() {
             {agents.map(agent => {
               const modelName = formatModelName(agent.config)
               const taskStatsLine = buildTaskStatParts(agent.taskStats)
+              const gatewayUsage = findGatewayUsageForAgent(agent, agentUsage)
 
               return (
                 <div
@@ -499,6 +582,29 @@ export function AgentSquadPanelPhase3() {
                     </div>
                   )}
 
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    {gatewayUsage ? (
+                      <div className="grid grid-cols-3 gap-2 text-2xs">
+                        <div>
+                          <div className="text-muted-foreground/80">{t('usageCost')}</div>
+                          <div className="text-foreground font-medium tabular-nums">${gatewayUsage.cost_usd.toFixed(4)}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground/80">{t('usageTokens')}</div>
+                          <div className="text-foreground font-medium tabular-nums">
+                            {(gatewayUsage.input_tokens + gatewayUsage.output_tokens).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground/80">{t('usageTasks')}</div>
+                          <div className="text-foreground font-medium tabular-nums">{gatewayUsage.tasks_count}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-2xs text-muted-foreground/70">{t('usageNoData')}</p>
+                    )}
+                  </div>
+
                   {/* Footer: last seen + actions */}
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
                     <span className="text-[11px] text-muted-foreground/70">
@@ -560,6 +666,28 @@ export function AgentSquadPanelPhase3() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {agentUsage.size > 0 && (
+          <div className="mt-6 rounded-lg border border-border/50 bg-card/40 p-3">
+            <div className="text-2xs font-medium text-muted-foreground mb-2">{t('gatewayUsageSummary')}</div>
+            <div className="space-y-1.5">
+              {Array.from(agentUsage.values()).map(u => (
+                <div
+                  key={u.agent_id}
+                  className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-2xs text-muted-foreground"
+                >
+                  <span className="font-mono text-foreground/90 break-all">
+                    {u.agent_id.length > 12 ? `${u.agent_id.slice(0, 8)}…` : u.agent_id}
+                  </span>
+                  <span className="tabular-nums shrink-0">
+                    ${u.cost_usd.toFixed(4)} · {(u.input_tokens + u.output_tokens).toLocaleString()} tok · {u.tasks_count}{' '}
+                    {t('usageTasks')}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

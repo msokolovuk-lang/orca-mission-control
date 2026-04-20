@@ -207,3 +207,20 @@ export async function pingOrca(): Promise<{ ok: boolean; latencyMs: number; erro
     }
   }
 }
+
+// ── Delegation log ──────────────────────────────
+export interface DelegationLogEntry {
+  timestamp: string
+  agent_id: string
+  display_name: string | null
+  tool_name: string
+  input_tokens: number
+  output_tokens: number
+  total_cost_usd: number
+  model: string
+}
+
+export async function listDelegationLog(limit = 50): Promise<DelegationLogEntry[]> {
+  const payload = await orcaFetch<unknown>(`/usage/delegation-log?limit=${limit}`)
+  return Array.isArray(payload) ? payload : []
+}

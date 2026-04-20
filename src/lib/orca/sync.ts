@@ -1,5 +1,5 @@
 import { getDatabase } from '@/lib/db'
-import { listAgents, listTasks } from './client'
+import { listAgents, listDelegationLog, listTasks } from './client'
 import { orcaAgentToMcAgent, orcaTaskToMcTask } from './mapping'
 
 type SyncResult = { added: number; updated: number; errors: string[] }
@@ -135,9 +135,77 @@ export async function syncTasksFromOrca(): Promise<SyncResult> {
   return result
 }
 
+export async function syncDelegationActivitiesFromOrca(): Promise<SyncResult> {
+  const result: SyncResult = { added: 0, updated: 0, errors: [] }
+
+  try {
+    const entries = await listDelegationLog(50)
+    if (!entries.length) return result
+
+    const db = getDatabase()
+
+    const checkStmt = db.prepare(
+      `SELECT id FROM activities WHERE type = 'delegation_completed' AND actor = ? AND created_at = ? AND workspace_id = 1 LIMIT 1`,
+    )
+
+    const insertStmt = db.prepare(`
+      INSERT INTO activities (type, entity_type, entity_id, actor, description, data, created_at, workspace_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+
+    const tx = db.transaction(() => {
+      for (const entry of entries) {
+        try {
+          const ts = Math.floor(new Date(entry.timestamp).getTime() / 1000)
+          const actor = entry.display_name || entry.agent_id
+
+          const existing = checkStmt.get(actor, ts) as { id: number } | undefined
+          if (existing) continue
+
+          const description = `Делегирование: ${entry.tool_name} → ${entry.display_name || entry.agent_id} (${entry.input_tokens + entry.output_tokens} tok, $${entry.total_cost_usd.toFixed(4)})`
+
+          insertStmt.run(
+            'delegation_completed',
+            'task',
+            0,
+            actor,
+            description,
+            JSON.stringify({
+              agent_id: entry.agent_id,
+              display_name: entry.display_name,
+              tool_name: entry.tool_name,
+              input_tokens: entry.input_tokens,
+              output_tokens: entry.output_tokens,
+              total_cost_usd: entry.total_cost_usd,
+              model: entry.model,
+              source_timestamp: entry.timestamp,
+            }),
+            ts,
+            1,
+          )
+
+          result.added += 1
+        } catch (err: any) {
+          result.errors.push(`delegation:${entry.agent_id}: ${err?.message || 'unknown error'}`)
+        }
+      }
+    })
+
+    tx()
+    console.info(`[orca-sync] delegation activities synced: added=${result.added}, errors=${result.errors.length}`)
+  } catch (err: any) {
+    const message = err?.message || 'failed to sync delegation activities'
+    result.errors.push(message)
+    console.error(`[orca-sync] delegation activities sync failed: ${message}`)
+  }
+
+  return result
+}
+
 export async function syncAll(): Promise<{
   agents: SyncResult
   tasks: SyncResult
+  delegationActivities: SyncResult
   startedAt: string
   finishedAt: string
 }> {
@@ -146,6 +214,7 @@ export async function syncAll(): Promise<{
 
   const agents = await syncAgentsFromOrca()
   const tasks = await syncTasksFromOrca()
+  const delegationActivities = await syncDelegationActivitiesFromOrca()
 
   const finishedAt = new Date().toISOString()
   console.info(`[orca-sync] sync finished at ${finishedAt}`)
@@ -153,6 +222,7 @@ export async function syncAll(): Promise<{
   return {
     agents,
     tasks,
+    delegationActivities,
     startedAt,
     finishedAt,
   }
